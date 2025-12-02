@@ -325,6 +325,31 @@ app.post("/analysis", async (req, res) => {
 });
 
 /* ============================================================
+   X402 DISCOVERY FILE
+   (Serves x402.json exactly as required by Discovery API)
+============================================================ */
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+app.get("/x402.json", (req, res) => {
+  try {
+    const filePath = path.join(__dirname, "x402.json");
+    const json = fs.readFileSync(filePath, "utf8");
+    res.setHeader("Content-Type", "application/json");
+    res.send(json);
+  } catch (err) {
+    console.error("Failed to serve x402.json:", err);
+    res.status(500).json({ error: "Could not load x402.json" });
+  }
+});
+
+
+
+/* ============================================================
    START SERVER
 ============================================================ */
 const PORT = process.env.PORT || 3000;

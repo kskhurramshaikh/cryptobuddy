@@ -1,144 +1,100 @@
 {
   "name": "CryptoBuddy",
-  "version": "1.0.0",
-  "description": "CryptoBuddy is a quant-grade AI trading agent that delivers institutional-level crypto signals and market intelligence, powered by Nexus microstructure models and on-chain X402 micropayments.",
-  "longDescription": "CryptoBuddy is a next-generation AI trading agent built on Nexus — the multi-agent quant intelligence framework designed for real-time crypto markets. Unlike rule-based bots or simple sentiment models, CryptoBuddy blends microstructure analytics, liquidation mapping, ATR volatility engines, futures OI flow, CVD, MELA, LCI concentration, and regime detection to produce precision BUY/SELL/HOLD signals with conviction scores.\n\nEvery output is paired with natural-language explanations generated through LLM reasoning, but grounded strictly in real market metrics (TOON snapshots). No hallucination, no external assumptions — each explanation comes from the precision model itself.\n\nCryptoBuddy runs on X402 micropayments, allowing anyone to consume institutional-grade analytics per-endpoint with seamless pay-per-call access. Detailed signals, market commentary, and lightweight machine-friendly signals make it suitable for trading bots, quant pipelines, dashboards, and autonomous AI agents.\n\nDesigned to match the standard of professional prop-desk analysis, CryptoBuddy is fast, interpretable, and built for real trading workflows.",
-  "creator": {
-    "name": "Nexus — AI Director at theblockverse.io",
-    "contact": "cryptobuddy@theblockverse.io"
-  },
-  "logo": "https://theblockverse.io/assets/blockverse-cube-logo.png",
-  "categories": [
-    "Trading",
-    "AI Agent",
-    "Analytics",
-    "Market Intelligence",
-    "Quant"
-  ],
-  "tags": [
-    "crypto",
-    "signals",
-    "btc",
-    "eth",
-    "sol",
-    "quant",
-    "trading",
-    "analysis",
-    "microstructure",
-    "llm"
-  ],
+  "description": "CryptoBuddy is a quant-grade AI Agent that delivers institutional-level crypto analysis and market intelligence, powered by Nexus microstructure models and on-chain X402 micropayments.",
+  "serviceUrl": "https://cryptobuddy-96zq.onrender.com",
+  "discoverable": true,
   "telemetry": true,
-  "network": "base",
-  "resources": {
-    "POST /signal-simple": {
+  "schemaVersion": "1.0.0",
+
+  "endpoints": {
+    "/signal-simple": {
+      "method": "POST",
       "price": "$0.10",
-      "description": "Lightweight BUY/SELL/HOLD + conviction only. No LLM. Ideal for bots.",
-      "outputSchema": {
-        "input": {
-          "type": "http",
-          "method": "POST",
-          "bodyType": "json",
-          "bodyFields": {
-            "symbol": { "type": "string", "required": true, "description": "Market symbol (BTC ETH SOL)" }
-          }
-        },
-        "output": {
-          "symbol": "string",
-          "timestamp": "string",
-          "signal": "string",
-          "conviction": "number"
-        }
+      "inputSchema": {
+        "type": "object",
+        "properties": { "symbol": { "type": "string" } },
+        "required": ["symbol"]
       },
-      "extra": {
-        "tier": "basic",
-        "telemetry": true
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "symbol": { "type": "string" },
+          "timestamp": { "type": "string" },
+          "signal": { "type": "string" },
+          "conviction": { "type": "number" }
+        }
       }
     },
 
-    "POST /signal": {
+    "/analysis-simple": {
+      "method": "POST",
+      "price": "$0.10",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "symbol": { "type": "string" } },
+        "required": ["symbol"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "symbol": { "type": "string" },
+          "timestamp": { "type": "string" },
+          "market": { "type": "string" }
+        }
+      }
+    },
+
+    "/signal": {
+      "method": "POST",
       "price": "$0.50",
-      "description": "Full detailed signal with LLM reasoning. Good for trading agents & dashboards.",
-      "outputSchema": {
-        "input": {
-          "type": "http",
-          "method": "POST",
-          "bodyType": "json",
-          "bodyFields": {
-            "symbol": { "type": "string", "required": true }
-          }
-        },
-        "output": {
-          "symbol": "string",
-          "timestamp": "string",
-          "signal": "string",
-          "conviction": "number",
-          "buyScore": "number",
-          "sellScore": "number",
-          "buyPct": "number",
-          "sellPct": "number",
-          "atr_4h": "number",
-          "atr_1h": "number",
-          "atr_15m": "number",
-          "atr_5m": "number",
-          "cvdScore": "number",
-          "lciScore": "number",
-          "lciConcentrationPct": "number",
-          "melaScore": "number",
-          "melaAgreementPct": "number",
-          "regime": "string",
-          "explanation": "string"
-        }
+      "inputSchema": {
+        "type": "object",
+        "properties": { "symbol": { "type": "string" } },
+        "required": ["symbol"]
       },
-      "extra": {
-        "tier": "pro",
-        "telemetry": true
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "symbol": { "type": "string" },
+          "timestamp": { "type": "string" },
+          "signal": { "type": "string" },
+          "conviction": { "type": "number" },
+          "buyScore": { "type": "number" },
+          "sellScore": { "type": "number" },
+          "buyPct": { "type": "number" },
+          "sellPct": { "type": "number" },
+          "atr_4h": { "type": "number" },
+          "atr_1h": { "type": "number" },
+          "atr_15m": { "type": "number" },
+          "atr_5m": { "type": "number" },
+          "vol_1h": { "type": "number" },
+          "vol_15m": { "type": "number" },
+          "vol_5m": { "type": "number" },
+          "cvdScore": { "type": "number" },
+          "lciScore": { "type": "number" },
+          "lciConcentrationPct": { "type": "number" },
+          "melaScore": { "type": "number" },
+          "melaAgreementPct": { "type": "number" },
+          "regime": { "type": "string" },
+          "explanation": { "type": "string" }
+        }
       }
     },
 
-    "POST /analysis-simple": {
-      "price": "$0.10",
-      "description": "Short, human-readable market commentary. No signal reasoning.",
-      "outputSchema": {
-        "input": {
-          "type": "http",
-          "method": "POST",
-          "bodyType": "json",
-          "bodyFields": {
-            "symbol": { "type": "string", "required": true }
-          }
-        },
-        "output": {
-          "symbol": "string",
-          "timestamp": "string",
-          "market": "string"
-        }
-      },
-      "extra": {
-        "tier": "basic",
-        "telemetry": true
-      }
-    },
-
-    "POST /analysis": {
+    "/analysis": {
+      "method": "POST",
       "price": "$1.00",
-      "description": "Premium full analysis: market commentary + signal wrap-up (LLM generated).",
-      "outputSchema": {
-        "input": {
-          "type": "http",
-          "method": "POST",
-          "bodyType": "json",
-          "bodyFields": {
-            "symbol": { "type": "string", "required": true }
-          }
-        },
-        "output": {
-          "toon": "object",
-          "report": "string"
-        }
+      "inputSchema": {
+        "type": "object",
+        "properties": { "symbol": { "type": "string" } },
+        "required": ["symbol"]
       },
-      "extra": {
-        "tier": "premium",
-        "telemetry": true
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "toon": { "type": "object" },
+          "report": { "type": "string" }
+        }
       }
     }
   }
