@@ -1,0 +1,25 @@
+{
+  "name": "cryptobuddy",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "cryptobuddy.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@coinbase/cdp-sdk": "^1.38.5",
+    "axios": "^1.13.2",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "morgan": "^1.10.1",
+    "node-fetch": "^2.7.0",
+    "openai": "^6.9.1",
+    "x402-express": "^0.7.3",
+    "x402-fetch": "^0.7.3"
+  }
+}

@@ -1,0 +1,21 @@
+===============================================
+ts=2025-12-01T08:30:51.408Z
+symbol=BTC
+signal=SELL
+conviction=85
+
+MARKET_EXPLANATION:
+- Buyers control 66.2% of liquidity, but market is in LIQUIDITY_STRESSED regime.
+- Momentum is weak (RSI 22.3, MACD_hist -643.6), with futures OI showing crowded longs.
+- Nearest liquidation zones are tight ($86590-$86679), suggesting potential volatility.
+
+SIGNAL_EVAL:
+- Model signal: SELL, conviction 85
+- LLM_AGREES: YES
+- Reason: Weak momentum, stressed liquidity, and crowded longs align with SELL. SellScore (85) strongly outweighs buyScore (50).
+
+IMPROVEMENT_SUGGESTIONS:
+- Increase weight on futures bias (currently -7.82) given crowded longs.
+- Add regime-specific thresholds for conviction (e.g., higher bar in LIQUIDITY_STRESSED).
+- Incorporate tighter ATR windows (5m/15m) for liquidation zone sensitivity.
+
