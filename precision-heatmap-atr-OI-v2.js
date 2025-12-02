@@ -132,20 +132,40 @@ async function fetchBinanceFuturesMetrics(symbolSpot, price) {
 /* -------------------------------------------------------------
    FETCH ORDERBOOKS
 ------------------------------------------------------------- */
-
 async function fetchBinanceDepth(symbol, limit = BINANCE_LIMIT) {
-  const tryLimits = [limit, 1000, 500, 100];
-  for (const l of tryLimits) {
-    try {
-      const url = `https://api.binance.com/api/v3/depth?symbol=${symbol}&limit=${l}`;
-      const res = await fetch(url, { timeout: 20000 });
-      if (!res.ok) throw new Error("bad");
-      const body = await res.json();
-      return { bids: body.bids || [], asks: body.asks || [], usedLimit: l };
-    } catch {}
+  const baseUrls = [
+    "https://api.binance.com",
+    "https://api1.binance.com",
+    "https://api2.binance.com",
+    "https://api3.binance.com",
+    "https://api.binance.us"
+  ];
+
+  const tryLimits = [limit, 5000, 1000, 500, 100];
+
+  for (const base of baseUrls) {
+    for (const l of tryLimits) {
+      try {
+        const url = `${base}/api/v3/depth?symbol=${symbol}&limit=${l}`;
+        const res = await fetch(url, { timeout: 20000 });
+        if (!res.ok) continue;
+        const body = await res.json();
+        if (!body || (!body.bids && !body.asks)) continue;
+        return {
+          bids: body.bids || [],
+          asks: body.asks || [],
+          usedLimit: l,
+          usedEndpoint: base
+        };
+      } catch {
+        // Continue to next
+      }
+    }
   }
-  throw new Error("Binance depth fetch failed");
+
+  throw new Error("Binance depth fetch failed (all endpoints unreachable)");
 }
+
 
 async function fetchCoinbaseBook(productId) {
   try {
@@ -167,18 +187,35 @@ async function fetchCoinbaseBook(productId) {
 ------------------------------------------------------------- */
 
 async function fetchBinanceKlines(symbol, interval = "4h", limit = 100) {
-  const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
-  const res = await fetch(url, { timeout: 15000 });
-  if (!res.ok) throw new Error("klines failed");
-  const body = await res.json();
+  const baseUrls = [
+    "https://api.binance.com",
+    "https://api1.binance.com",
+    "https://api2.binance.com",
+    "https://api3.binance.com",
+    "https://api.binance.us"
+  ];
 
-  return body.map(k => ({
-    open: Number(k[1]),
-    high: Number(k[2]),
-    low: Number(k[3]),
-    close: Number(k[4]),
-    volume: Number(k[5])
-  }));
+  for (const base of baseUrls) {
+    try {
+      const url = `${base}/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
+      const res = await fetch(url, { timeout: 15000 });
+      if (!res.ok) continue;
+      const body = await res.json();
+      if (!Array.isArray(body)) continue;
+
+      return body.map(k => ({
+        open: Number(k[1]),
+        high: Number(k[2]),
+        low: Number(k[3]),
+        close: Number(k[4]),
+        volume: Number(k[5])
+      }));
+    } catch {
+      // try next
+    }
+  }
+
+  throw new Error("Binance klines fetch failed (all endpoints unreachable)");
 }
 
 function computeATR(klines, period = ATR_PERIOD) {
