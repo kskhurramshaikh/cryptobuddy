@@ -32,11 +32,13 @@ app.use(
 // ⬆⬆ ADD THIS BLOCK HERE
 
 
-// ✔ X402Scan discovery root
+// X402Scan discovery: required 402-style root response
 app.get("/", (req, res) => {
-  res.json({
+  res.status(402).json({
     x402Version: 1,
-    name: "CryptoBuddy",
+    error: "Payment Required",
+    payer: null,
+    accepts: [],
     x402Metadata: "https://cryptobuddy-96zq.onrender.com/.well-known/x402scan.json"
   });
 });
