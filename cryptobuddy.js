@@ -8,6 +8,9 @@ import { facilitator, createCdpAuthHeaders } from "@coinbase/x402";
 import { generateSignalTOON } from "./signal-engine.js";
 import { explainSignalLLM, explainMarketLLM } from "./explanation-engine.js";
 
+import { readFile } from "fs/promises";
+
+
 dotenv.config();
 
 const app = express();
@@ -93,11 +96,13 @@ app.get("/metrics", (req, res) => {
 /* ============================================================
    X402 DISCOVERY MANIFEST (Bazaar)
 ============================================================ */
-app.get("/x402.json", (req, res) => {
+app.get("/x402.json", async (req, res) => {
   try {
-    const config = require("./x402.json");
-    res.json(config);
+    const json = await readFile("./x402.json", "utf8");
+    res.setHeader("Content-Type", "application/json");
+    res.send(json);
   } catch (err) {
+    console.error("❌ Failed to load x402.json:", err);
     res.status(500).json({ error: "Failed to load x402.json" });
   }
 });
