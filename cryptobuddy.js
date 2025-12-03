@@ -18,6 +18,19 @@ app.use(express.json());
 app.use(helmet());
 app.use(morgan("dev"));
 
+// ⬇⬇ ADD THIS BLOCK HERE
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+app.use(
+  "/.well-known",
+  express.static(path.join(__dirname, ".well-known"))
+);
+// ⬆⬆ ADD THIS BLOCK HERE
+
 /* ============================================================
    TELEMETRY
 ============================================================ */
