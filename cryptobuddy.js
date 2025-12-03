@@ -3,6 +3,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 import dotenv from "dotenv";
 import { paymentMiddleware } from "x402-express";
+import { facilitator, createCdpAuthHeaders } from "@coinbase/x402";
 
 import { generateSignalTOON } from "./signal-engine.js";
 import { explainSignalLLM, explainMarketLLM } from "./explanation-engine.js";
@@ -111,31 +112,27 @@ if (process.env.DEV_MODE === "true") {
   console.log("🔓 X402 Disabled — DEV_MODE=true");
 } else {
   console.log("🔧 X402 paymentMiddleware active");
-  console.log("🌐 Facilitator URL:", process.env.FACILITATOR_URL);
+  console.log("🌐 Facilitator URL:", facilitator);
 
-  app.use(
-    paymentMiddleware(process.env.AGENT_WALLET, {
-      /* ============================
-         1) /signal-simple
-      ============================ */
+ app.use(
+  paymentMiddleware(
+    process.env.AGENT_WALLET,
+
+    // 2️⃣ ROUTES OBJECT (unchanged)
+    {
       "POST /signal-simple": {
         price: process.env.PRICE_SIGNAL_SIMPLE || "$0.10",
-        network: "base-sepolia",
+        network: "base",
         config: {
           discoverable: true,
           name: "CryptoBuddy — Simple Signal",
-          description:
-            "Get a BUY/SELL/HOLD signal plus conviction score only. Cheap endpoint for routing and agents.",
+          description: "Get a BUY/SELL/HOLD signal plus conviction only.",
           inputSchema: {
             type: "http",
             method: "POST",
             bodyType: "json",
             bodyFields: {
-              symbol: {
-                type: "string",
-                required: true,
-                description: "Symbol (BTC, ETH, SOL, AVAX, etc)",
-              },
+              symbol: { type: "string", required: true },
             },
           },
           outputSchema: {
@@ -147,27 +144,19 @@ if (process.env.DEV_MODE === "true") {
         },
       },
 
-      /* ============================
-         2) /signal
-      ============================ */
       "POST /signal": {
         price: process.env.PRICE_SIGNAL_DETAILED || "$1.00",
-        network: "base-sepolia",
+        network: "base",
         config: {
           discoverable: true,
           name: "CryptoBuddy — Detailed Signal (LLM)",
-          description:
-            "Full BUY/SELL/HOLD signal + conviction + WHY explanation using LLM with TOON metrics.",
+          description: "Signal + conviction + LLM explanation",
           inputSchema: {
             type: "http",
             method: "POST",
             bodyType: "json",
             bodyFields: {
-              symbol: {
-                type: "string",
-                required: true,
-                description: "Symbol (BTC, ETH, SOL, AVAX, etc)",
-              },
+              symbol: { type: "string", required: true },
             },
           },
           outputSchema: {
@@ -182,27 +171,19 @@ if (process.env.DEV_MODE === "true") {
         },
       },
 
-      /* ============================
-         3) /analysis-simple
-      ============================ */
       "POST /analysis-simple": {
         price: process.env.PRICE_ANALYSIS_SIMPLE || "$0.10",
-        network: "base-sepolia",
+        network: "base",
         config: {
           discoverable: true,
           name: "CryptoBuddy — Simple Market Commentary",
-          description:
-            "Short human-readable market analysis only. No metrics or signal JSON.",
+          description: "Short market commentary only.",
           inputSchema: {
             type: "http",
             method: "POST",
             bodyType: "json",
             bodyFields: {
-              symbol: {
-                type: "string",
-                required: true,
-                description: "Symbol (BTC, ETH, SOL, AVAX, etc)",
-              },
+              symbol: { type: "string", required: true },
             },
           },
           outputSchema: {
@@ -213,27 +194,19 @@ if (process.env.DEV_MODE === "true") {
         },
       },
 
-      /* ============================
-         4) /analysis
-      ============================ */
       "POST /analysis": {
         price: process.env.PRICE_ANALYSIS_DETAILED || "$1.00",
-        network: "base-sepolia",
+        network: "base",
         config: {
           discoverable: true,
           name: "CryptoBuddy — Detailed Market Analysis",
-          description:
-            "Full TOON metrics + human-readable market analysis + signal context.",
+          description: "Full TOON metrics + commentary",
           inputSchema: {
             type: "http",
             method: "POST",
             bodyType: "json",
             bodyFields: {
-              symbol: {
-                type: "string",
-                required: true,
-                description: "Symbol (BTC, ETH, SOL, AVAX, etc)",
-              },
+              symbol: { type: "string", required: true },
             },
           },
           outputSchema: {
@@ -242,12 +215,16 @@ if (process.env.DEV_MODE === "true") {
           },
         },
       },
+    },
 
-      url:
-        process.env.FACILITATOR_URL ||
-        "https://x402.org/facilitator/onchain",
-    })
-  );
+    // 3️⃣ FACILITATOR CONFIG (REQUIRED FOR CDP)
+    {
+      url: "https://api.cdp.coinbase.com/platform/v2/x402",	
+   createAuthHeaders: facilitator.createAuthHeaders,
+      
+    }
+  )
+);
 }
 
 /* ============================================================
@@ -323,31 +300,6 @@ app.post("/analysis", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-/* ============================================================
-   X402 DISCOVERY FILE
-   (Serves x402.json exactly as required by Discovery API)
-============================================================ */
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-app.get("/x402.json", (req, res) => {
-  try {
-    const filePath = path.join(__dirname, "x402.json");
-    const json = fs.readFileSync(filePath, "utf8");
-    res.setHeader("Content-Type", "application/json");
-    res.send(json);
-  } catch (err) {
-    console.error("Failed to serve x402.json:", err);
-    res.status(500).json({ error: "Could not load x402.json" });
-  }
-});
-
-
 
 /* ============================================================
    START SERVER
