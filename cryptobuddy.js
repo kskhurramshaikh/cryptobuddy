@@ -166,6 +166,12 @@ if (process.env.DEV_MODE === "true") {
       "POST /signal-simple": {
         price: process.env.PRICE_SIGNAL_SIMPLE || "$0.10",
         network: "base",
+// Required by Coinbase paymentMiddleware + X402Scan validation
+    	bodySchema: {
+     	 bodyFields: {
+        symbol: { type: "string", required: true }
+      }
+    },
         config: {
           discoverable: true,
           name: "CryptoBuddy — Simple Signal",
@@ -178,7 +184,8 @@ if (process.env.DEV_MODE === "true") {
               symbol: { type: "string", required: true },
             },
           },
-          outputSchema: {
+
+	   outputSchema: {
             symbol: "string",
             timestamp: "string",
             signal: "string",
