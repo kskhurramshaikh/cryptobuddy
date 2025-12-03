@@ -1,0 +1,163 @@
+{
+  "x402Version": 1,
+  "accepts": [
+    {
+      "scheme": "exact",
+      "network": "base",
+      "maxAmountRequired": "100000",
+      "resource": "https://cryptobuddy-96zq.onrender.com/signal-simple",
+      "description": "Get a BUY/SELL/HOLD signal with conviction score.",
+      "mimeType": "application/json",
+      "payTo": "0x58be3eb5c86dacfc6ac71fad3aad8a7d07eeb391",
+      "maxTimeoutSeconds": 60,
+      "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "extra": {
+        "name": "CryptoBuddy",
+        "endpointName": "Simple Signal"
+      },
+      "outputSchema": {
+        "input": {
+          "type": "http",
+          "method": "POST",
+          "bodyType": "json",
+          "bodyFields": {
+            "symbol": {
+              "type": "string",
+              "required": true,
+              "description": "Crypto symbol (e.g. BTC)"
+            }
+          }
+        },
+        "output": {
+          "symbol": "string",
+          "timestamp": "string",
+          "signal": "string",
+          "conviction": "number"
+        }
+      }
+    },
+
+    {
+      "scheme": "exact",
+      "network": "base",
+      "maxAmountRequired": "500000",
+      "resource": "https://cryptobuddy-96zq.onrender.com/signal",
+      "description": "Detailed BUY/SELL/HOLD signal with microstructure metrics and LLM explanation.",
+      "mimeType": "application/json",
+      "payTo": "0x58be3eb5c86dacfc6ac71fad3aad8a7d07eeb391",
+      "maxTimeoutSeconds": 120,
+      "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "extra": {
+        "name": "CryptoBuddy",
+        "endpointName": "Detailed Signal"
+      },
+      "outputSchema": {
+        "input": {
+          "type": "http",
+          "method": "POST",
+          "bodyType": "json",
+          "bodyFields": {
+            "symbol": {
+              "type": "string",
+              "required": true,
+              "description": "Crypto symbol (e.g. BTC)"
+            }
+          }
+        },
+        "output": {
+          "symbol": "string",
+          "timestamp": "string",
+          "signal": "string",
+          "conviction": "number",
+          "buyScore": "number",
+          "sellScore": "number",
+          "buyPct": "number",
+          "sellPct": "number",
+          "atr_4h": "number",
+          "atr_1h": "number",
+          "atr_15m": "number",
+          "atr_5m": "number",
+          "vol_1h": "number",
+          "vol_15m": "number",
+          "vol_5m": "number",
+          "cvdScore": "number",
+          "lciScore": "number",
+          "lciConcentrationPct": "number",
+          "melaScore": "number",
+          "melaAgreementPct": "number",
+          "regime": "string",
+          "explanation": "string"
+        }
+      }
+    },
+
+    {
+      "scheme": "exact",
+      "network": "base",
+      "maxAmountRequired": "100000",
+      "resource": "https://cryptobuddy-96zq.onrender.com/analysis-simple",
+      "description": "Short market commentary and outlook for a given symbol.",
+      "mimeType": "application/json",
+      "payTo": "0x58be3eb5c86dacfc6ac71fad3aad8a7d07eeb391",
+      "maxTimeoutSeconds": 60,
+      "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "extra": {
+        "name": "CryptoBuddy",
+        "endpointName": "Simple Analysis"
+      },
+      "outputSchema": {
+        "input": {
+          "type": "http",
+          "method": "POST",
+          "bodyType": "json",
+          "bodyFields": {
+            "symbol": {
+              "type": "string",
+              "required": true,
+              "description": "Crypto symbol (e.g. BTC)"
+            }
+          }
+        },
+        "output": {
+          "symbol": "string",
+          "timestamp": "string",
+          "market": "string"
+        }
+      }
+    },
+
+    {
+      "scheme": "exact",
+      "network": "base",
+      "maxAmountRequired": "1000000",
+      "resource": "https://cryptobuddy-96zq.onrender.com/analysis",
+      "description": "Full market analysis including TOON metrics and narrative report.",
+      "mimeType": "application/json",
+      "payTo": "0x58be3eb5c86dacfc6ac71fad3aad8a7d07eeb391",
+      "maxTimeoutSeconds": 300,
+      "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "extra": {
+        "name": "CryptoBuddy",
+        "endpointName": "Detailed Analysis"
+      },
+      "outputSchema": {
+        "input": {
+          "type": "http",
+          "method": "POST",
+          "bodyType": "json",
+          "bodyFields": {
+            "symbol": {
+              "type": "string",
+              "required": true,
+              "description": "Crypto symbol (e.g. BTC)"
+            }
+          }
+        },
+        "output": {
+          "toon": "object",
+          "report": "string"
+        }
+      }
+    }
+  ]
+}
