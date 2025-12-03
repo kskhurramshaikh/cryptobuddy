@@ -91,6 +91,18 @@ app.get("/metrics", (req, res) => {
 });
 
 /* ============================================================
+   X402 DISCOVERY MANIFEST (Bazaar)
+============================================================ */
+app.get("/x402.json", (req, res) => {
+  try {
+    const config = require("./x402.json");
+    res.json(config);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to load x402.json" });
+  }
+});
+
+/* ============================================================
    X402 LOGGING (before facilitator)
 ============================================================ */
 app.use((req, res, next) => {
