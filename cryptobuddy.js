@@ -37,7 +37,7 @@ app.get("/", (req, res) => {
   res.json({
     x402Version: 1,
     name: "CryptoBuddy",
-    metadata: "https://cryptobuddy-96zq.onrender.com/.well-known/x402scan.json"
+    x402Metadata: "https://cryptobuddy-96zq.onrender.com/.well-known/x402scan.json"
   });
 });
 
