@@ -221,28 +221,35 @@ if (process.env.DEV_MODE === "true") {
         },
       },
 
-      "POST /analysis-simple": {
-        price: process.env.PRICE_ANALYSIS_SIMPLE || "$0.10",
-        network: "base",
-        config: {
-          discoverable: true,
-          name: "CryptoBuddy — Simple Market Commentary",
-          description: "Short market commentary only.",
-          inputSchema: {
-            type: "http",
-            method: "POST",
-            bodyType: "json",
-            bodyFields: {
-              symbol: { type: "string", required: true },
-            },
-          },
-          outputSchema: {
-            symbol: "string",
-            timestamp: "string",
-            market: "string",
-          },
-        },
-      },
+      "/analysis-simple": {
+  price: process.env.PRICE_ANALYSIS_SIMPLE || "$0.10",
+  network: "base",
+
+  inputSchema: {
+    bodyParams: {
+      symbol: {
+        type: "string",
+        description: "Crypto symbol (e.g., BTC)",
+        required: true
+      }
+    }
+  },
+
+  outputSchema: {
+    type: "object",
+    properties: {
+      symbol: { type: "string" },
+      timestamp: { type: "string" },
+      market: { type: "string" }
+    }
+  },
+
+  config: {
+    discoverable: true,
+    name: "CryptoBuddy — Simple Market Commentary",
+    description: "Short market commentary only."
+  }
+},
 
       "POST /analysis": {
         price: process.env.PRICE_ANALYSIS_DETAILED || "$1.00",
