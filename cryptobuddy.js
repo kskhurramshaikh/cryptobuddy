@@ -157,13 +157,14 @@ if (process.env.DEV_MODE === "true") {
   console.log("🔧 X402 paymentMiddleware active");
   console.log("🌐 Facilitator URL:", facilitator);
 
- app.use(
-  paymentMiddleware(
-    process.env.AGENT_WALLET,
+ app.use(paymentMiddleware({
+routes: {
 
-    // 2️⃣ ROUTES OBJECT (unchanged)
-   {
+  // -------------------------------------------------------
+  // POST /signal-simple
+  // -------------------------------------------------------
   "POST /signal-simple": {
+    payTo: process.env.AGENT_WALLET,
     price: process.env.PRICE_SIGNAL_SIMPLE || "$0.10",
     network: "base",
 
@@ -176,8 +177,8 @@ if (process.env.DEV_MODE === "true") {
         queryParams: {
           symbol: {
             type: "string",
-            description: "Crypto symbol (e.g., BTC)",
-            required: true
+            required: true,
+            description: "Crypto symbol (e.g., BTC)"
           }
         }
       },
@@ -194,101 +195,118 @@ if (process.env.DEV_MODE === "true") {
     }
   },
 
-      "POST /signal": {
-        price: process.env.PRICE_SIGNAL_DETAILED || "$1.00",
-        network: "base",
-        config: {
-          discoverable: true,
-          name: "CryptoBuddy — Detailed Signal (LLM)",
-          description: "Signal + conviction + LLM explanation",
-          inputSchema: {
-            type: "http",
-            method: "POST",
-            bodyType: "json",
-            bodyFields: {
-              symbol: { type: "string", required: true },
-            },
-          },
-          outputSchema: {
-            symbol: "string",
-            timestamp: "string",
-            signal: "string",
-            conviction: "number",
-            buyScore: "number",
-            sellScore: "number",
-            explanation: "string",
-          },
-        },
+  // -------------------------------------------------------
+  // POST /signal
+  // -------------------------------------------------------
+  "POST /signal": {
+    payTo: process.env.AGENT_WALLET,
+    price: process.env.PRICE_SIGNAL_DETAILED || "$1.00",
+    network: "base",
+
+    config: {
+      discoverable: true,
+      name: "CryptoBuddy — Detailed Signal",
+      description: "Signal + conviction + LLM explanation",
+
+      inputSchema: {
+        bodyType: "json",
+        bodyFields: {
+          symbol: { type: "string", required: true }
+        }
       },
 
- "POST /analysis-simple": {
-  price: process.env.PRICE_ANALYSIS_SIMPLE || "$0.10",
-  network: "base",
-
-  // facilitator-visible metadata
-  method: "POST",
-  type: "http",
-  mimeType: "application/json",
-  payTo: process.env.AGENT_WALLET,
-  asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-  extra: { name: "USD Coin", version: "2" },
-  maxAmountRequired: "10000",
-  maxTimeoutSeconds: 60,
-  resource: "https://cryptobuddy-96zq.onrender.com/analysis-simple",
-  scheme: "exact",
-
-  // MUST MATCH dump format
-  inputSchema: {
-    bodyFields: {
-      symbol: {
-        type: "string",
-        required: true,
-        description: "Crypto symbol (e.g., BTC)"
+      outputSchema: {
+        type: "object",
+        properties: {
+          symbol: { type: "string" },
+          timestamp: { type: "string" },
+          signal: { type: "string" },
+          conviction: { type: "number" },
+          buyScore: { type: "number" },
+          sellScore: { type: "number" },
+          explanation: { type: "string" }
+        }
       }
-    },
-    bodyType: "json"
-  },
-
-  outputSchema: {
-    type: "object",
-    properties: {
-      symbol: { type: "string" },
-      timestamp: { type: "string" },
-      market: { type: "string" }
     }
   },
 
-  config: {
-    discoverable: true,
-    name: "CryptoBuddy — Simple Market Commentary",
-    description: "Short market commentary only."
-  }
-},
+  // -------------------------------------------------------
+  // POST /analysis-simple
+  // -------------------------------------------------------
+  "POST /analysis-simple": {
+    payTo: process.env.AGENT_WALLET,
+    price: process.env.PRICE_ANALYSIS_SIMPLE || "$0.10",
+    network: "base",
 
+    // Facilitator metadata required for discoverability
+    method: "POST",
+    type: "http",
+    mimeType: "application/json",
+    asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",     // USDC on Base
+    extra: { name: "USD Coin", version: "2" },
+    maxAmountRequired: "10000",
+    maxTimeoutSeconds: 60,
+    resource: "https://cryptobuddy-96zq.onrender.com/analysis-simple",
+    scheme: "exact",
 
+    config: {
+      discoverable: true,
+      name: "CryptoBuddy — Simple Market Commentary",
+      description: "Short market commentary only.",
 
-      "POST /analysis": {
-        price: process.env.PRICE_ANALYSIS_DETAILED || "$1.00",
-        network: "base",
-        config: {
-          discoverable: true,
-          name: "CryptoBuddy — Detailed Market Analysis",
-          description: "Full TOON metrics + commentary",
-          inputSchema: {
-            type: "http",
-            method: "POST",
-            bodyType: "json",
-            bodyFields: {
-              symbol: { type: "string", required: true },
-            },
-          },
-          outputSchema: {
-            toon: "object",
-            report: "string",
-          },
-        },
+      inputSchema: {
+        queryParams: {
+          symbol: {
+            type: "string",
+            required: true,
+            description: "Crypto symbol (e.g., BTC)"
+          }
+        }
       },
-    },
+
+      outputSchema: {
+        type: "object",
+        properties: {
+          symbol: { type: "string" },
+          timestamp: { type: "string" },
+          market: { type: "string" }
+        }
+      }
+    }
+  },
+
+  // -------------------------------------------------------
+  // POST /analysis
+  // -------------------------------------------------------
+  "POST /analysis": {
+    payTo: process.env.AGENT_WALLET,
+    price: process.env.PRICE_ANALYSIS_DETAILED || "$1.00",
+    network: "base",
+
+    config: {
+      discoverable: true,
+      name: "CryptoBuddy — Detailed Market Analysis",
+      description: "Full TOON metrics + commentary",
+
+      inputSchema: {
+        bodyType: "json",
+        bodyFields: {
+          symbol: { type: "string", required: true }
+        }
+      },
+
+      outputSchema: {
+        type: "object",
+        properties: {
+          toon: { type: "object" },
+          report: { type: "string" }
+        }
+      }
+    }
+  }
+
+}
+}, 
 
     // 3️⃣ FACILITATOR CONFIG (REQUIRED FOR CDP)
     {
