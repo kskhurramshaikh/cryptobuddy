@@ -162,37 +162,37 @@ if (process.env.DEV_MODE === "true") {
     process.env.AGENT_WALLET,
 
     // 2️⃣ ROUTES OBJECT (unchanged)
-    {
-      "POST /signal-simple": {
-        price: process.env.PRICE_SIGNAL_SIMPLE || "$0.10",
-        network: "base",
-// Required by Coinbase paymentMiddleware + X402Scan validation
-    	bodySchema: {
-     	 bodyFields: {
-        symbol: { type: "string", required: true }
-      }
-    },
-        config: {
-          discoverable: true,
-          name: "CryptoBuddy — Simple Signal",
-          description: "Get a BUY/SELL/HOLD signal plus conviction only.",
-          inputSchema: {
-            type: "http",
-            method: "POST",
-            bodyType: "json",
-            bodyFields: {
-              symbol: { type: "string", required: true },
-            },
-          },
+   {
+  "POST /signal-simple": {
+    price: process.env.PRICE_SIGNAL_SIMPLE || "$0.10",
+    network: "base",
 
-	   outputSchema: {
-            symbol: "string",
-            timestamp: "string",
-            signal: "string",
-            conviction: "number",
-          },
-        },
+    config: {
+      discoverable: true,
+      name: "CryptoBuddy — Simple Signal",
+      description: "Get a Quant Tier BUY/SELL/HOLD signal plus conviction",
+
+      inputSchema: {
+        queryParams: {
+          symbol: {
+            type: "string",
+            description: "Crypto symbol (e.g., BTC)",
+            required: true
+          }
+        }
       },
+
+      outputSchema: {
+        type: "object",
+        properties: {
+          symbol: { type: "string" },
+          timestamp: { type: "string" },
+          signal: { type: "string" },
+          conviction: { type: "number" }
+        }
+      }
+    }
+  },
 
       "POST /signal": {
         price: process.env.PRICE_SIGNAL_DETAILED || "$1.00",
