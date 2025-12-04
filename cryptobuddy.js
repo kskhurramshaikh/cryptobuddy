@@ -221,20 +221,27 @@ if (process.env.DEV_MODE === "true") {
         },
       },
 
-      "/analysis-simple": {
+ "/analysis-simple": {
   price: process.env.PRICE_ANALYSIS_SIMPLE || "$0.10",
   network: "base",
-
+  method: "POST",
+  type: "http",
+  mimeType: "application/json",
+  resource: "https://cryptobuddy-96zq.onrender.com/analysis-simple",
+  payTo: process.env.AGENT_WALLET,
+  asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  extra: { name: "USD Coin", version: "2" },
+  maxAmountRequired: "10000",
+  maxTimeoutSeconds: 60,
   inputSchema: {
     bodyParams: {
       symbol: {
         type: "string",
-        description: "Crypto symbol (e.g., BTC)",
-        required: true
+        required: true,
+        description: "Crypto symbol (e.g., BTC)"
       }
     }
   },
-
   outputSchema: {
     type: "object",
     properties: {
@@ -250,6 +257,7 @@ if (process.env.DEV_MODE === "true") {
     description: "Short market commentary only."
   }
 },
+
 
       "POST /analysis": {
         price: process.env.PRICE_ANALYSIS_DETAILED || "$1.00",
