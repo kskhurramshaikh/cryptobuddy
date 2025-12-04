@@ -157,156 +157,115 @@ if (process.env.DEV_MODE === "true") {
   console.log("🔧 X402 paymentMiddleware active");
   console.log("🌐 Facilitator URL:", facilitator);
 
- app.use(paymentMiddleware({
-routes: {
+ app.use(
+  paymentMiddleware(
+    process.env.AGENT_WALLET,
 
-  // -------------------------------------------------------
-  // POST /signal-simple
-  // -------------------------------------------------------
-  "POST /signal-simple": {
-    payTo: process.env.AGENT_WALLET,
-    price: process.env.PRICE_SIGNAL_SIMPLE || "$0.10",
-    network: "base",
+    // 2️⃣ ROUTES OBJECT (unchanged)
+    {
+      "POST /signal-simple": {
+        price: process.env.PRICE_SIGNAL_SIMPLE || "$0.10",
+        network: "base",
+// Required by Coinbase paymentMiddleware + X402Scan validation
+    	bodySchema: {
+     	 bodyFields: {
+        symbol: { type: "string", required: true }
+      }
+    },
+        config: {
+          discoverable: true,
+          name: "CryptoBuddy — Simple Signal",
+          description: "Get a BUY/SELL/HOLD signal plus conviction only.",
+          inputSchema: {
+            type: "http",
+            method: "POST",
+            bodyType: "json",
+            bodyFields: {
+              symbol: { type: "string", required: true },
+            },
+          },
 
-    config: {
-      discoverable: true,
-      name: "CryptoBuddy — Simple Signal",
-      description: "Get a Quant Tier BUY/SELL/HOLD signal plus conviction",
-
-      inputSchema: {
-        queryParams: {
-          symbol: {
-            type: "string",
-            required: true,
-            description: "Crypto symbol (e.g., BTC)"
-          }
-        }
+	   outputSchema: {
+            symbol: "string",
+            timestamp: "string",
+            signal: "string",
+            conviction: "number",
+          },
+        },
       },
 
-      outputSchema: {
-        type: "object",
-        properties: {
-          symbol: { type: "string" },
-          timestamp: { type: "string" },
-          signal: { type: "string" },
-          conviction: { type: "number" }
-        }
-      }
-    }
-  },
-
-  // -------------------------------------------------------
-  // POST /signal
-  // -------------------------------------------------------
-  "POST /signal": {
-    payTo: process.env.AGENT_WALLET,
-    price: process.env.PRICE_SIGNAL_DETAILED || "$1.00",
-    network: "base",
-
-    config: {
-      discoverable: true,
-      name: "CryptoBuddy — Detailed Signal",
-      description: "Signal + conviction + LLM explanation",
-
-      inputSchema: {
-        bodyType: "json",
-        bodyFields: {
-          symbol: { type: "string", required: true }
-        }
+      "POST /signal": {
+        price: process.env.PRICE_SIGNAL_DETAILED || "$1.00",
+        network: "base",
+        config: {
+          discoverable: true,
+          name: "CryptoBuddy — Detailed Signal (LLM)",
+          description: "Signal + conviction + LLM explanation",
+          inputSchema: {
+            type: "http",
+            method: "POST",
+            bodyType: "json",
+            bodyFields: {
+              symbol: { type: "string", required: true },
+            },
+          },
+          outputSchema: {
+            symbol: "string",
+            timestamp: "string",
+            signal: "string",
+            conviction: "number",
+            buyScore: "number",
+            sellScore: "number",
+            explanation: "string",
+          },
+        },
       },
 
-      outputSchema: {
-        type: "object",
-        properties: {
-          symbol: { type: "string" },
-          timestamp: { type: "string" },
-          signal: { type: "string" },
-          conviction: { type: "number" },
-          buyScore: { type: "number" },
-          sellScore: { type: "number" },
-          explanation: { type: "string" }
-        }
-      }
-    }
-  },
-
-  // -------------------------------------------------------
-  // POST /analysis-simple
-  // -------------------------------------------------------
-  "POST /analysis-simple": {
-    payTo: process.env.AGENT_WALLET,
-    price: process.env.PRICE_ANALYSIS_SIMPLE || "$0.10",
-    network: "base",
-
-    // Facilitator metadata required for discoverability
-    method: "POST",
-    type: "http",
-    mimeType: "application/json",
-    asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",     // USDC on Base
-    extra: { name: "USD Coin", version: "2" },
-    maxAmountRequired: "10000",
-    maxTimeoutSeconds: 60,
-    resource: "https://cryptobuddy-96zq.onrender.com/analysis-simple",
-    scheme: "exact",
-
-    config: {
-      discoverable: true,
-      name: "CryptoBuddy — Simple Market Commentary",
-      description: "Short market commentary only.",
-
-      inputSchema: {
-        queryParams: {
-          symbol: {
-            type: "string",
-            required: true,
-            description: "Crypto symbol (e.g., BTC)"
-          }
-        }
+      "POST /analysis-simple": {
+        price: process.env.PRICE_ANALYSIS_SIMPLE || "$0.10",
+        network: "base",
+        config: {
+          discoverable: true,
+          name: "CryptoBuddy — Simple Market Commentary",
+          description: "Short market commentary only.",
+          inputSchema: {
+            type: "http",
+            method: "POST",
+            bodyType: "json",
+            bodyFields: {
+              symbol: { type: "string", required: true },
+            },
+          },
+          outputSchema: {
+            symbol: "string",
+            timestamp: "string",
+            market: "string",
+          },
+        },
       },
 
-      outputSchema: {
-        type: "object",
-        properties: {
-          symbol: { type: "string" },
-          timestamp: { type: "string" },
-          market: { type: "string" }
-        }
-      }
-    }
-  },
-
-  // -------------------------------------------------------
-  // POST /analysis
-  // -------------------------------------------------------
-  "POST /analysis": {
-    payTo: process.env.AGENT_WALLET,
-    price: process.env.PRICE_ANALYSIS_DETAILED || "$1.00",
-    network: "base",
-
-    config: {
-      discoverable: true,
-      name: "CryptoBuddy — Detailed Market Analysis",
-      description: "Full TOON metrics + commentary",
-
-      inputSchema: {
-        bodyType: "json",
-        bodyFields: {
-          symbol: { type: "string", required: true }
-        }
+      "POST /analysis": {
+        price: process.env.PRICE_ANALYSIS_DETAILED || "$1.00",
+        network: "base",
+        config: {
+          discoverable: true,
+          name: "CryptoBuddy — Detailed Market Analysis",
+          description: "Full TOON metrics + commentary",
+          inputSchema: {
+            type: "http",
+            method: "POST",
+            bodyType: "json",
+            bodyFields: {
+              symbol: { type: "string", required: true },
+            },
+          },
+          outputSchema: {
+            toon: "object",
+            report: "string",
+          },
+        },
       },
-
-      outputSchema: {
-        type: "object",
-        properties: {
-          toon: { type: "object" },
-          report: { type: "string" }
-        }
-      }
-    }
-  }
-
-}
-}, 
+    },
 
     // 3️⃣ FACILITATOR CONFIG (REQUIRED FOR CDP)
     {
