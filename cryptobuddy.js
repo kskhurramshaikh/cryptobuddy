@@ -39,6 +39,11 @@ app.get("/", (req, res) => {
     error: "Payment Required",
     payer: null,
     accepts: [],
+
+// 🔥 Add service metadata
+    serviceName: "CryptoBuddy",
+    description: "AI-powered trading signals, market insight, and predictive analysis.",
+
     x402Metadata: "https://cryptobuddy-96zq.onrender.com/.well-known/x402scan.json"
   });
 });
@@ -230,20 +235,26 @@ if (process.env.DEV_MODE === "true") {
           name: "CryptoBuddy — Simple Market Commentary",
           description: "Short market commentary only.",
           inputSchema: {
-            type: "http",
-            method: "POST",
-            bodyType: "json",
-            bodyFields: {
-              symbol: { type: "string", required: true },
+            queryParams: {
+              symbol: { 
+		type: "string",
+		description: "Enter Coin Symbol for the AI Market Summary e.g. BTC ETH SOL etc.", 
+		required: true 
+		},
             },
           },
+
           outputSchema: {
-            symbol: "string",
-            timestamp: "string",
-            market: "string",
+	type: "object",
+	properties: {
+            symbol: { type: "string"},
+            timestamp: { type: "string"},
+            market: { type: "string"},
           },
         },
       },
+},
+
 
       "POST /analysis": {
         price: process.env.PRICE_ANALYSIS_DETAILED || "$1.00",
@@ -253,21 +264,25 @@ if (process.env.DEV_MODE === "true") {
           name: "CryptoBuddy — Detailed Market Analysis",
           description: "Full TOON metrics + commentary",
           inputSchema: {
-            type: "http",
-            method: "POST",
-            bodyType: "json",
-            bodyFields: {
-              symbol: { type: "string", required: true },
+            queryParams: {
+              symbol: { 
+		type: "string",
+	description: "Enter Coin Symbol for the AI Detailed Market Summary e.g. BTC ETH SOL etc.", 
+		required: true 
+		},
             },
           },
           outputSchema: {
-            toon: "object",
-            report: "string",
+	type: "object",
+	properties: {
+
+            toon: { type: "object"},
+            report: { type: "string"},
           },
         },
       },
     },
-
+},
     // 3️⃣ FACILITATOR CONFIG (REQUIRED FOR CDP)
     {
       url: "https://api.cdp.coinbase.com/platform/v2/x402",	
