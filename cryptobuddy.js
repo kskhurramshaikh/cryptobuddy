@@ -298,7 +298,10 @@ app.use((req, res, next) => {
 ============================================================ */
 app.post("/signal-simple", async (req, res) => {
   try {
-    const { symbol } = req.body;
+    //const { symbol } = req.body;
+   const symbol = req.body?.symbol || req.query?.symbol;
+    if (!symbol) return res.status(400).json({ error: "symbol is required" });
+
     const toon = await generateSignalTOON(symbol);
     res.json({
       symbol: toon.symbol,
@@ -314,7 +317,12 @@ app.post("/signal-simple", async (req, res) => {
 
 app.post("/signal", async (req, res) => {
   try {
-    const { symbol } = req.body;
+    //const { symbol } = req.body;
+    const symbol = req.body?.symbol || req.query?.symbol;
+    if (!symbol) return res.status(400).json({ error: "symbol is required" });
+
+
+
     const toon = await generateSignalTOON(symbol);
     const explanation = await explainSignalLLM(toon);
     res.json({ ...toon, explanation });
@@ -326,7 +334,10 @@ app.post("/signal", async (req, res) => {
 
 app.post("/analysis-simple", async (req, res) => {
   try {
-    const { symbol } = req.body;
+    //const { symbol } = req.body;
+    const symbol = req.body?.symbol || req.query?.symbol;
+    if (!symbol) return res.status(400).json({ error: "symbol is required" });
+
     const toon = await generateSignalTOON(symbol);
     const full = await explainMarketLLM(toon);
     res.json({
@@ -342,7 +353,11 @@ app.post("/analysis-simple", async (req, res) => {
 
 app.post("/analysis", async (req, res) => {
   try {
-    const { symbol } = req.body;
+   // const { symbol } = req.body;
+
+    const symbol = req.body?.symbol || req.query?.symbol;
+    if (!symbol) return res.status(400).json({ error: "symbol is required" });
+
     const toon = await generateSignalTOON(symbol);
     const report = await explainMarketLLM(toon);
     res.json({ toon, report });
