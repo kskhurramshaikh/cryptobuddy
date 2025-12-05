@@ -201,6 +201,7 @@ if (process.env.DEV_MODE === "true") {
         network: "base",
         config: {
           discoverable: true,
+	  resource: "Cryptobuddy - Quant Tier AI Intelligence Trading Agent",	
           description: "Signal + conviction + LLM explanation",
           inputSchema: {
             queryParams: {
