@@ -163,33 +163,30 @@ if (process.env.DEV_MODE === "true") {
 
     // 2️⃣ ROUTES OBJECT (unchanged)
     {
-      "POST /signal-simple": {
+     "POST /signal-simple": {
         price: process.env.PRICE_SIGNAL_SIMPLE || "$0.10",
         network: "base",
-// Required by Coinbase paymentMiddleware + X402Scan validation
-    	bodySchema: {
-     	 bodyFields: {
-        symbol: { type: "string", required: true }
-      }
-    },
         config: {
           discoverable: true,
-          name: "CryptoBuddy — Simple Signal",
           description: "Get a BUY/SELL/HOLD signal plus conviction only.",
           inputSchema: {
-            type: "http",
-            method: "POST",
-            bodyType: "json",
-            bodyFields: {
-              symbol: { type: "string", required: true },
+            queryParams: {
+              symbol: { 
+		type: "string", 
+		description: "Enter Coin Symbol for the AI Signal e.g. BTC ETH SOL etc.",
+		required: true 
+		},
             },
           },
 
 	   outputSchema: {
-            symbol: "string",
-            timestamp: "string",
-            signal: "string",
-            conviction: "number",
+		type: "object",
+		properties: {
+            		symbol: { type: "string"},
+            		timestamp: { type: "string"},
+            		signal: { type: "string"},
+            		conviction: { type: "number"}
+	},
           },
         },
       },
@@ -199,27 +196,31 @@ if (process.env.DEV_MODE === "true") {
         network: "base",
         config: {
           discoverable: true,
-          name: "CryptoBuddy — Detailed Signal (LLM)",
           description: "Signal + conviction + LLM explanation",
           inputSchema: {
-            type: "http",
-            method: "POST",
-            bodyType: "json",
-            bodyFields: {
-              symbol: { type: "string", required: true },
+            queryParams: {
+              symbol: { 
+		type: "string",
+		description: "Enter Coin Symbol for the AI Signal e.g. BTC ETH SOL etc.", 
+		required: true 
+		},
             },
           },
           outputSchema: {
-            symbol: "string",
-            timestamp: "string",
-            signal: "string",
-            conviction: "number",
-            buyScore: "number",
-            sellScore: "number",
-            explanation: "string",
+		type: "object",
+		properties: {
+	        symbol: { type: "string"},
+        	timestamp: {type: "string"},
+            	signal: { type: "string"},
+            	conviction: { type: "number"},
+            	buyScore: { type: "number"},
+            	sellScore: { type: "number"},
+            	explanation: { type: "string"},
+	},
           },
         },
       },
+
 
       "POST /analysis-simple": {
         price: process.env.PRICE_ANALYSIS_SIMPLE || "$0.10",
