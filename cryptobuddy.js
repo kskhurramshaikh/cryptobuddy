@@ -173,6 +173,8 @@ if (process.env.DEV_MODE === "true") {
         network: "base",
         config: {
           discoverable: true,
+	  resource: "https://cryptobuddy-96zq.onrender.com/signal-simple",
+          mimeType: "application/json",
           description: "Get a BUY/SELL/HOLD signal plus conviction only.",
           inputSchema: {
             queryParams: {
@@ -201,6 +203,8 @@ if (process.env.DEV_MODE === "true") {
         network: "base",
         config: {
           discoverable: true,
+          resource: "https://cryptobuddy-96zq.onrender.com/signal-simple",
+          mimeType: "application/json",
           description: "Signal + conviction + LLM explanation",
           inputSchema: {
             queryParams: {
@@ -232,6 +236,8 @@ if (process.env.DEV_MODE === "true") {
         network: "base",
         config: {
           discoverable: true,
+          resource: "https://cryptobuddy-96zq.onrender.com/signal-simple",
+          mimeType: "application/json",
           name: "CryptoBuddy — Simple Market Commentary",
           description: "Short market commentary only.",
           inputSchema: {
@@ -261,6 +267,8 @@ if (process.env.DEV_MODE === "true") {
         network: "base",
         config: {
           discoverable: true,
+          resource: "https://cryptobuddy-96zq.onrender.com/signal-simple",
+          mimeType: "application/json",
           name: "CryptoBuddy — Detailed Market Analysis",
           description: "Full TOON metrics + commentary",
           inputSchema: {
