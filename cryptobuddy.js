@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import dotenv from "dotenv";
@@ -14,6 +15,8 @@ import { readFile } from "fs/promises";
 dotenv.config();
 
 const app = express();
+app.use(cors());
+
 app.use(express.json());
 app.use(helmet());
 app.use(morgan("dev"));
@@ -139,6 +142,20 @@ app.get("/x402.json", async (req, res) => {
 });
 
 /* ============================================================
+   SIGNER UI STATIC FILE
+============================================================ */
+// Serve the signer UI (no duplicate imports)
+app.get("/trade-terminal", (req, res) => {
+  res.sendFile(path.join(__dirname, "xp-signer-ui.html"));
+});
+
+app.use("/assets", express.static(path.join(__dirname)));  
+// allows blockverse-logo.png to load correctly
+
+
+
+
+/* ============================================================
    X402 LOGGING (before facilitator)
 ============================================================ */
 app.use((req, res, next) => {
@@ -147,6 +164,34 @@ app.use((req, res, next) => {
   console.log("📩 XPAYMENT header received:", req.headers["x-payment"]);
   next();
 });
+
+
+/* ============================================================
+   SIGNER SUBMIT → forwards to internal signal generator
+============================================================ */
+app.post("/signer-submit", async (req, res) => {
+  try {
+    const symbol = req.body?.symbol;
+    if (!symbol) return res.status(400).json({ error: "symbol is required" });
+
+    const toon = await generateSignalTOON(symbol);
+
+    return res.json({
+      symbol: toon.symbol,
+      timestamp: toon.timestamp,
+      signal: toon.signal,
+      conviction: toon.conviction,
+    });
+
+  } catch (err) {
+    console.error("❌ /signer-submit error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+
+
 
 /* ============================================================
    X402 PAYMENT CONFIG

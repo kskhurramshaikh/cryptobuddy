@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>CryptoBuddy — Terminal (Final v2)</title>
+
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Ethers -->
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+
+<style>
+  :root{
+    --bg:#06070a;
+    --panel:#0f1620;
+    --muted:#94a3b8;
+    --accent1:#0EA5A4;
+    --accent2:#059669;
+  }
+
+  body{ background: radial-gradient(1200px 600px at 10% 10%, #071029 0%, #04050a 40%, var(--bg) 100%); }
+
+  .glass-2 { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.015)); border:1px solid rgba(255,255,255,0.03); backdrop-filter: blur(8px); }
+  .neon-btn { background: linear-gradient(90deg,var(--accent1), var(--accent2)); box-shadow: 0 10px 30px rgba(14,165,164,0.12); }
+  .neon-outline { box-shadow: 0 0 24px rgba(14,165,164,0.06), inset 0 1px 0 rgba(255,255,255,0.02); }
+  .ticker { color: #9fbff5; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+  .typeahead-list { max-height: 220px; overflow:auto; }
+
+  .donut-center {
+    font-weight:700;
+    fill:#FFFFFF;
+    color:#FFFFFF;
+  }
+
+  .sel-icon { width:28px; height:28px; border-radius:8px; object-fit:contain; background:#071022; border:1px solid rgba(255,255,255,0.03); }
+
+  .input-with-icon { display:flex; align-items:center; gap:10px; padding:0 12px; }
+  .input-with-icon input { flex:1; background:transparent; border:0; outline:0; color: #e6eef8; padding:12px 0; }
+
+  .cube-wrap {
+    width:44px;
+    height:44px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:linear-gradient(180deg,#07111a,#071026);
+    border-radius:10px;
+    border:1px solid rgba(255,255,255,0.03);
+    overflow:hidden;
+  }
+</style>
+</head>
+
+<body class="min-h-screen text-slate-100">
+
+<div class="max-w-5xl mx-auto px-6 py-10">
+
+  <!-- HEADER -->
+  <header class="flex items-center justify-between gap-6 mb-6">
+    <div class="flex items-center gap-4">
+
+      <!-- ⭐ REPLACED SVG WITH PNG (ONLY CHANGE MADE) ⭐ -->
+      <div class="cube-wrap">
+        <img src="blockverse-logo.png" alt="Blockverse" class="w-full h-full object-contain" />
+      </div>
+
+      <div>
+        <div class="text-2xl font-extrabold">Blockverse</div>
+        <div class="text-xs text-slate-400">CryptoBuddy • Pay-to-Signal</div>
+      </div>
+    </div>
+
+    <div class="px-3 py-1 rounded-xl bg-slate-800 text-xs neon-outline">
+      Base • USDC
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="glass-2 rounded-2xl p-6 neon-outline">
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- SEARCH + INFO -->
+      <section class="lg:col-span-2">
+        <label class="text-sm text-slate-300">Search symbol</label>
+
+        <div class="relative mt-3">
+          <div id="inputIconWrap" class="input-with-icon bg-transparent border border-slate-800 rounded-xl px-3 py-2">
+            <img id="selectedIconSmall" src="" alt="" class="sel-icon hidden" />
+            <input id="symbolInput" placeholder="Type or search (BTC, ETH, SOL...)" class="text-white placeholder:text-slate-500" autocomplete="off"/>
+          </div>
+
+          <div id="typeahead" class="absolute left-0 right-0 mt-2 bg-[#071026] border border-slate-800 rounded-xl typeahead-list hidden z-40"></div>
+        </div>
+
+        <div class="mt-4 flex gap-4">
+          <div class="w-28 p-3 rounded-lg bg-[#091125] border border-slate-800">
+            <div class="text-xs text-slate-400">Price</div>
+            <div id="priceBadge" class="text-lg font-semibold mt-1">0.10 USDC</div>
+          </div>
+
+          <div class="flex-1 p-3 rounded-lg bg-[#071024] border border-slate-800">
+            <div id="desc" class="text-sm text-slate-300">Select a symbol to see what you get.</div>
+            <div class="text-xs text-slate-500 mt-2">Signal: BUY / SELL / HOLD + Conviction score</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT PANEL -->
+      <aside class="p-4 rounded-xl bg-[#071025] border border-slate-800 flex flex-col justify-between items-stretch">
+        <div>
+          <div class="text-xs text-slate-400">Selected</div>
+          <div class="mt-2 flex items-center gap-3">
+            <img id="selectedIconLarge" src="" alt="" class="sel-icon hidden" />
+            <div id="selectedSymbol" class="text-2xl font-extrabold">—</div>
+          </div>
+        </div>
+
+        <button id="payBtn"
+          class="w-full mt-6 py-3 rounded-xl neon-btn font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+          disabled>
+          <svg width="18" height="18" viewBox="0 0 24 24" class="inline-block" aria-hidden>
+            <path d="M2 12 L12 2 L22 12 L12 22 Z" fill="rgba(255,255,255,0.06)"/>
+          </svg>
+          <span id="payLabel">Pay with MetaMask</span>
+          <svg id="paySpinner" class="hidden animate-spin" width="16" height="16" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.4)" stroke-width="3" fill="none"/>
+            <path d="M22 12a10 10 0 0 0-10-10" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"/>
+          </svg>
+        </button>
+      </aside>
+
+    </div>
+
+    <!-- TICKER -->
+    <div class="mt-6 border-t border-slate-800 pt-4 flex items-center justify-between">
+      <div class="text-sm ticker" id="ticker">—</div>
+      <div class="text-xs text-slate-500">Updated: <span id="lastUpdate">—</span></div>
+    </div>
+
+    <!-- RESULTS -->
+    <section class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <div class="lg:col-span-2 p-6 rounded-xl bg-[#071022] border border-slate-800">
+        <div id="resultTop" class="hidden">
+          <div class="flex justify-between">
+            <div>
+              <div id="resultSignal" class="text-4xl font-extrabold"></div>
+              <div id="resultSymbol" class="text-sm text-slate-400 mt-1"></div>
+            </div>
+
+            <div class="text-right">
+              <div id="convictionNum" class="text-4xl font-extrabold"></div>
+              <div id="convictionLabel" class="text-sm text-slate-300 mt-1"></div>
+            </div>
+          </div>
+
+          <div class="mt-6 text-sm text-slate-300">
+            CryptoBuddy’s ensemble of AI models produces this signal using liquidity, momentum, OI, CVD and regime detection.
+          </div>
+        </div>
+
+        <div id="noResult" class="p-6 mt-2 rounded-md bg-[#06101b] border border-slate-800 text-slate-500">
+          No signal yet — choose a symbol and pay to unlock.
+        </div>
+      </div>
+
+      <!-- DONUT -->
+      <aside class="p-6 rounded-xl bg-[#071022] border border-slate-800 flex flex-col items-center">
+
+        <div id="signalStrengthLabel" class="text-sm font-semibold text-slate-300 mb-3">—</div>
+
+        <svg id="donut" width="160" height="160" viewBox="0 0 42 42">
+          <circle cx="21" cy="21" r="12" fill="#0b1120"/>
+          <g transform="rotate(-90 21 21)">
+            <circle id="donut-bg" cx="21" cy="21" r="12" fill="none" stroke="#0b1220" stroke-width="6"/>
+            <circle id="donut-fg" cx="21" cy="21" r="12" fill="none"
+                    stroke="url(#gradLow)"
+                    stroke-width="6" stroke-linecap="round"
+                    stroke-dasharray="0 1000"/>
+          </g>
+
+          <defs>
+            <linearGradient id="gradLow" x1="0%" x2="100%">
+              <stop offset="0%" stop-color="#60a5fa"/>
+              <stop offset="100%" stop-color="#7c3aed"/>
+            </linearGradient>
+
+            <linearGradient id="gradMid" x1="0%" x2="100%">
+              <stop offset="0%" stop-color="#f59e0b"/>
+              <stop offset="100%" stop-color="#f97316"/>
+            </linearGradient>
+
+            <linearGradient id="gradHigh" x1="0%" x2="100%">
+              <stop offset="0%" stop-color="#10b981"/>
+              <stop offset="100%" stop-color="#059669"/>
+            </linearGradient>
+          </defs>
+
+          <text id="donut-text" x="21" y="23" text-anchor="middle" font-size="7" class="donut-center">0</text>
+        </svg>
+
+        <div class="mt-4 text-sm text-slate-300">Success Rate</div>
+        <div class="text-xs text-slate-500 mt-2">0–49 Low • 50–79 Medium • 80–100 Strong</div>
+      </aside>
+
+    </section>
+
+  </main>
+</div>
+
+<script>
+const ICONS = {
+  BTC:"https://cryptologos.cc/logos/bitcoin-btc-logo.png",
+  ETH:"https://cryptologos.cc/logos/ethereum-eth-logo.png",
+  BNB:"https://cryptologos.cc/logos/bnb-bnb-logo.png",
+  SOL:"https://cryptologos.cc/logos/solana-sol-logo.png",
+  XRP:"https://cryptologos.cc/logos/xrp-xrp-logo.png",
+  ADA:"https://cryptologos.cc/logos/cardano-ada-logo.png",
+  DOGE:"https://cryptologos.cc/logos/dogecoin-doge-logo.png",
+  AVAX:"https://cryptologos.cc/logos/avalanche-avax-logo.png",
+  TRX:"https://cryptologos.cc/logos/tron-trx-logo.png",
+  LINK:"https://cryptologos.cc/logos/chainlink-link-logo.png"
+};
+
+const SYMBOLS = [
+  { sym:"BTC", name:"Bitcoin" },
+  { sym:"ETH", name:"Ethereum" },
+  { sym:"BNB", name:"BNB" },
+  { sym:"SOL", name:"Solana" },
+  { sym:"XRP", name:"XRP" },
+  { sym:"ADA", name:"Cardano" },
+  { sym:"DOGE", name:"Dogecoin" },
+  { sym:"AVAX", name:"Avalanche" },
+  { sym:"TRX", name:"TRON" },
+  { sym:"LINK", name:"Chainlink" }
+];
+
+const PRICE_USDC = 0.10;
+
+const typeahead = document.getElementById('typeahead');
+const symbolInput = document.getElementById('symbolInput');
+const selectedSymbol = document.getElementById('selectedSymbol');
+const selectedIconSmall = document.getElementById('selectedIconSmall');
+const selectedIconLarge = document.getElementById('selectedIconLarge');
+const payBtn = document.getElementById('payBtn');
+const payLabel = document.getElementById('payLabel');
+const paySpinner = document.getElementById('paySpinner');
+const desc = document.getElementById('desc');
+const ticker = document.getElementById('ticker');
+const lastUpdate = document.getElementById('lastUpdate');
+const signalLabel = document.getElementById('signalStrengthLabel');
+
+let selected = null;
+
+symbolInput.addEventListener('input', e=>{
+  const v = e.target.value.toUpperCase();
+  const filtered = SYMBOLS.filter(s => s.sym.includes(v) || s.name.toUpperCase().includes(v));
+  renderList(filtered);
+});
+
+function renderList(list){
+  typeahead.innerHTML = "";
+  if(!list.length){ typeahead.classList.add("hidden"); return; }
+
+  list.forEach(item=>{
+    const row = document.createElement("div");
+    row.className = "px-3 py-3 hover:bg-slate-900 cursor-pointer";
+    row.innerHTML = `
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <img src="${ICONS[item.sym]}" class="w-8 h-8 rounded-md border border-slate-800 object-contain bg-slate-900" />
+          <div>
+            <div class="font-semibold">${item.sym}</div>
+            <div class="text-xs text-slate-400">${item.name}</div>
+          </div>
+        </div>
+        <div class="text-xs text-slate-400">${PRICE_USDC.toFixed(2)} USDC</div>
+      </div>
+    `;
+    row.onclick = ()=> selectSym(item.sym);
+    typeahead.appendChild(row);
+  });
+
+  typeahead.classList.remove("hidden");
+}
+
+document.addEventListener('click', e=>{
+  if(!typeahead.contains(e.target) && e.target !== symbolInput) typeahead.classList.add('hidden');
+});
+
+function selectSym(sym){
+  selected = sym;
+  symbolInput.value = sym;
+  selectedSymbol.textContent = sym;
+
+  const ico = ICONS[sym];
+  if(ico){
+    selectedIconSmall.src = ico;
+    selectedIconSmall.classList.remove('hidden');
+    selectedIconLarge.src = ico;
+    selectedIconLarge.classList.remove('hidden');
+  } else {
+    selectedIconSmall.classList.add('hidden');
+    selectedIconLarge.classList.add('hidden');
+  }
+
+  typeahead.classList.add('hidden');
+  payBtn.disabled = false;
+
+  desc.textContent = `Unlock AI signal for ${sym}: BUY/SELL/HOLD + conviction score.`;
+  ticker.textContent = `${sym} · ${PRICE_USDC.toFixed(2)} USDC · CryptoBuddy AI`;
+  lastUpdate.textContent = new Date().toLocaleString();
+}
+
+function updateDonut(score){
+  const circle = document.getElementById("donut-fg");
+  const center = document.getElementById("donut-text");
+
+  const r = 12;
+  const circ = 2*Math.PI*r;
+  const pct = Math.max(0, Math.min(score, 100));
+  const dash = circ * (pct/100);
+
+  circle.setAttribute("stroke-dasharray", `${dash} ${circ-dash}`);
+
+  if(pct >= 80){
+    circle.setAttribute("stroke","url(#gradHigh)");
+    signalLabel.textContent = "STRONG";
+    signalLabel.style.color = "#10b981";
+  } else if(pct >= 50){
+    circle.setAttribute("stroke","url(#gradMid)");
+    signalLabel.textContent = "MEDIUM";
+    signalLabel.style.color = "#f59e0b";
+  } else {
+    circle.setAttribute("stroke","url(#gradLow)");
+    signalLabel.textContent = "LOW";
+    signalLabel.style.color = "#60a5fa";
+  }
+
+  center.textContent = pct;
+}
+
+payBtn.onclick = async()=>{
+
+  if(!selected) return;
+  if(!window.ethereum){ alert("MetaMask missing"); return; }
+
+  payBtn.disabled = true;
+  paySpinner.classList.remove("hidden");
+  payLabel.textContent = "Connecting…";
+
+  try {
+    const prep = await fetch(`/prepare-payment?symbol=${selected}`);
+    const prepData = await prep.json();
+    const accept = prepData.accept;
+
+    const accounts = await ethereum.request({ method:"eth_requestAccounts" });
+    const payer = accounts[0];
+
+    payLabel.textContent = "Sign…";
+
+    const payTo = accept.payTo;
+    const asset = accept.asset;
+    const amount = accept.maxAmountRequired;
+    const timeout = accept.maxTimeoutSeconds || 60;
+    const deadline = Math.floor(Date.now()/1000) + timeout;
+    const nonce = ethers.utils.hexlify(ethers.utils.randomBytes(32));
+
+    const domain = {
+      name: accept.extra?.name || 'USD Coin',
+      version: accept.extra?.version || '2',
+      chainId: 8453,
+      verifyingContract: asset
+    };
+
+    const types = {
+      EIP712Domain: [
+        { name:"name", type:"string" },
+        { name:"version", type:"string" },
+        { name:"chainId", type:"uint256" },
+        { name:"verifyingContract", type:"address" }
+      ],
+      TransferWithAuthorization: [
+        { name:"from", type:"address" },
+        { name:"to", type:"address" },
+        { name:"value", type:"uint256" },
+        { name:"validAfter", type:"uint256" },
+        { name:"validBefore", type:"uint256" },
+        { name:"nonce", type:"bytes32" }
+      ]
+    };
+
+    const message = {
+      from: payer,
+      to: payTo,
+      value: amount,
+      validAfter: 0,
+      validBefore: deadline,
+      nonce
+    };
+
+    const typedData = { types, domain, primaryType:"TransferWithAuthorization", message };
+
+    const signature = await ethereum.request({
+      method:"eth_signTypedData_v4",
+      params:[payer, JSON.stringify(typedData)]
+    });
+
+    payLabel.textContent = "Verifying…";
+
+    const resp = await fetch("/submit-proof", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body:JSON.stringify({
+        signedXPayment: JSON.stringify({
+          x402Version:1,
+          scheme:"exact",
+          network:"base",
+          payload:{
+            signature,
+            authorization:{
+              from: payer,
+              to: payTo,
+              value: String(amount),
+              validAfter:"0",
+              validBefore:String(deadline),
+              nonce
+            }
+          }
+        }),
+        symbol: selected
+      })
+    });
+
+    const txt = await resp.text();
+    let data;
+    try{ data = JSON.parse(txt); }
+    catch { const m = txt.match(/\{[\s\S]*\}/); if(m) data = JSON.parse(m[0]); }
+
+    if(data?.signal){
+      showResult(data);
+    } else {
+      alert("Server returned: " + txt);
+    }
+
+  } catch(err){
+    alert(err.message || err);
+  }
+
+  paySpinner.classList.add("hidden");
+  payLabel.textContent = "Pay with MetaMask";
+  payBtn.disabled = false;
+};
+
+function showResult(obj){
+  document.getElementById("noResult").classList.add("hidden");
+  document.getElementById("resultTop").classList.remove("hidden");
+
+  document.getElementById("resultSignal").textContent = obj.signal.toUpperCase();
+  document.getElementById("resultSymbol").textContent =
+    `${obj.symbol} · ${new Date(obj.timestamp).toLocaleString()}`;
+  document.getElementById("convictionLabel").textContent =
+    obj.conviction >=80 ? "Strong" : obj.conviction>=50 ? "Medium" : "Low";
+  document.getElementById("convictionNum").textContent = obj.conviction;
+
+  updateDonut(obj.conviction);
+}
+
+updateDonut(0);
+</script>
+
+</body>
+</html>
