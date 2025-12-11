@@ -211,19 +211,19 @@ app.get("/prepare-payment", (req, res) => {
     const SERVICE_MAP = {
       "signal-simple": {
         endpoint: "signal-simple",
-        price: Number(process.env.PRICE_SIGNAL_SIMPLE || 0.10),
+        price: Number(process.env.PRICE_SIGNAL_SIMPLE_USDC || 0.10),
       },
       "signal": {
         endpoint: "signal",
-        price: Number(process.env.PRICE_SIGNAL_DETAILED || 0.50),
+        price: Number(process.env.PRICE_SIGNAL_DETAILED_USDC || 0.50),
       },
       "analysis-simple": {
         endpoint: "analysis-simple",
-        price: Number(process.env.PRICE_ANALYSIS_SIMPLE || 0.10),
+        price: Number(process.env.PRICE_ANALYSIS_SIMPLE_USDC || 0.10),
       },
       "analysis": {
         endpoint: "analysis",
-        price: Number(process.env.PRICE_ANALYSIS_DETAILED || 1.00),
+        price: Number(process.env.PRICE_ANALYSIS_DETAILED_USDC || 1.00),
       },
     };
 
