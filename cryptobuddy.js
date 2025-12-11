@@ -27,6 +27,7 @@ app.use(
         ...helmet.contentSecurityPolicy.getDefaultDirectives(),
         "script-src": [
           "'self'",
+	  "'unsafe-inline'",   // ⭐ FIXES SEARCH + INTERACTIVITY
           "https://cdn.tailwindcss.com",
           "https://cdn.jsdelivr.net"
         ],
