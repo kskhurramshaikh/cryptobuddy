@@ -18,7 +18,6 @@ const app = express();
 app.use(cors());
 
 app.use(express.json());
-import helmet from "helmet";
 
 // Allow Tailwind CDN / Ethers CDN / Cryptologos
 app.use(
