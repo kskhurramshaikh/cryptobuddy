@@ -200,69 +200,100 @@ app.use((req, res, next) => {
 
 
 // -----------------------------
-// PREPARE PAYMENT (used by UI)
+// PREPARE PAYMENT (dynamic service pricing)
 // -----------------------------
 app.get("/prepare-payment", (req, res) => {
   try {
     const symbol = req.query.symbol || "BTC";
+    const service = req.query.service || "signal-simple";
 
-    // Price (USDC) for /signal-simple (6 decimals)
-    const priceUSDC = Number(process.env.PRICE_SIGNAL_SIMPLE_USDC || 0.10); // default 0.10 USDC
-    const amount6 = Math.round(priceUSDC * 1e6); // e.g. 0.10 -> 100000
+    // Map of service → endpoint + price env var
+    const SERVICE_MAP = {
+      "signal-simple": {
+        endpoint: "signal-simple",
+        price: Number(process.env.PRICE_SIGNAL_SIMPLE_USDC || 0.10),
+      },
+      "signal": {
+        endpoint: "signal",
+        price: Number(process.env.PRICE_SIGNAL_DETAILED_USDC || 1.00),
+      },
+      "analysis-simple": {
+        endpoint: "analysis-simple",
+        price: Number(process.env.PRICE_ANALYSIS_SIMPLE_USDC || 0.10),
+      },
+      "analysis": {
+        endpoint: "analysis",
+        price: Number(process.env.PRICE_ANALYSIS_DETAILED_USDC || 1.00),
+      },
+    };
+
+    const svc = SERVICE_MAP[service];
+    if (!svc) return res.status(400).json({ error: "Invalid service" });
+
+    const amount6 = Math.round(svc.price * 1e6); // convert USDC to 6 decimals
 
     const accept = {
       payTo: process.env.AGENT_WALLET,
-      asset: process.env.USDC_CONTRACT || "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      asset: process.env.USDC_CONTRACT,
       maxAmountRequired: amount6,
       maxTimeoutSeconds: Number(process.env.PAYMENT_TIMEOUT || 300),
-      resource: `https://${req.get("host")}/signal-simple`,
-      extra: { name: "USD Coin", version: "2" }
+      resource: `https://${req.get("host")}/${svc.endpoint}`,
+      extra: { name: "USD Coin", version: "2" },
     };
 
-    res.json({ accept, symbol });
+    res.json({ accept, symbol, service });
   } catch (err) {
     console.error("❌ /prepare-payment error:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
+
 // -----------------------------
-// SUBMIT PROOF (from UI after signing)
+// SUBMIT PROOF (dynamic endpoint routing)
 // -----------------------------
 app.post("/submit-proof", async (req, res) => {
   try {
-    const { signedXPayment, symbol } = req.body || {};
+    const { signedXPayment, symbol, service } = req.body || {};
+
     if (!signedXPayment) return res.status(400).json({ error: "signedXPayment is required" });
-    const sym = symbol || "BTC";
+    if (!symbol) return res.status(400).json({ error: "symbol is required" });
+    if (!service) return res.status(400).json({ error: "service is required" });
 
-    // base64 encode signed payload (UI already sends JSON string)
-    const encoded = Buffer.from(typeof signedXPayment === "string" ? signedXPayment : JSON.stringify(signedXPayment)).toString("base64");
+    // Validate service routing
+    const VALID = ["signal-simple", "signal", "analysis-simple", "analysis"];
+    if (!VALID.includes(service)) {
+      return res.status(400).json({ error: "Invalid service" });
+    }
 
-    // Target internal endpoint (same host)
-    const target = `${req.protocol}://${req.get("host")}/signal-simple?symbol=${encodeURIComponent(sym)}`;
+    // Encode signed XPAYMENT JSON → Base64
+    const encoded = Buffer.from(
+      typeof signedXPayment === "string"
+        ? signedXPayment
+        : JSON.stringify(signedXPayment)
+    ).toString("base64");
 
-    console.log("➡ Forwarding X-PAYMENT to:", target);
+    // Forward to internal paid endpoint
+    const target = `${req.protocol}://${req.get("host")}/${service}?symbol=${encodeURIComponent(symbol)}`;
+
+    console.log(`➡ Forwarding XPAYMENT → ${target}`);
 
     const r = await fetch(target, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-PAYMENT": encoded
+        "X-PAYMENT": encoded,
       },
-      // keep body empty (signal-simple reads req.query.symbol)
-      body: JSON.stringify({})
+      body: JSON.stringify({}),
     });
 
-    const contentType = r.headers.get("content-type") || "";
     const txt = await r.text();
 
-    // Try to parse JSON; otherwise return raw text
     try {
-      const data = JSON.parse(txt);
-      return res.json(data);
-    } catch (e) {
-      // return plaintext (useful for debugging)
-      res.type("text").send(txt);
+      const json = JSON.parse(txt);
+      return res.json(json);
+    } catch {
+      return res.type("text").send(txt);
     }
   } catch (err) {
     console.error("❌ /submit-proof error:", err);

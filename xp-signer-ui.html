@@ -94,9 +94,26 @@
           <div id="typeahead" class="absolute left-0 right-0 mt-2 bg-[#071026] border border-slate-800 rounded-xl typeahead-list hidden z-40"></div>
         </div>
 
+
+<!-- SERVICE SELECTOR (FULL WIDTH) -->
+<div class="mt-4 p-4 rounded-xl bg-[#071024] border border-slate-800">
+  <label class="text-sm text-slate-300">Choose Service</label>
+  <select id="service"
+    class="w-full mt-2 bg-[#091125] border border-slate-800 text-slate-200 p-3 rounded-xl focus:outline-none focus:ring-1 focus:ring-slate-600">
+    <option value="signal-simple">Simple Signal (0.xx USDC)</option>
+    <option value="signal">Detailed Signal (0.xx USDC)</option>
+    <option value="analysis-simple">Simple Market Analysis (0.xx USDC)</option>
+    <option value="analysis">Detailed Market Analysis (0.xx USDC)</option>
+  </select>
+</div>
+
+
+
+
         <div class="mt-4 flex gap-4">
           <div class="w-28 p-3 rounded-lg bg-[#091125] border border-slate-800">
-            <div class="text-xs text-slate-400">Price</div>
+
+         <div class="text-xs text-slate-400">Price</div>
             <div id="priceBadge" class="text-lg font-semibold mt-1">0.10 USDC</div>
           </div>
 
@@ -164,6 +181,7 @@
         <div id="noResult" class="p-6 mt-2 rounded-md bg-[#06101b] border border-slate-800 text-slate-500">
           No signal yet — choose a symbol and pay to unlock.
         </div>
+         <div id="output" class="mt-4 text-slate-200"></div>
       </div>
 
       <!-- DONUT -->
@@ -352,7 +370,10 @@ payBtn.onclick = async()=>{
   payLabel.textContent = "Connecting…";
 
   try {
-    const prep = await fetch(`/prepare-payment?symbol=${selected}`);
+
+    const service = document.getElementById("service").value;
+    const prep = await fetch(`/prepare-payment?symbol=${selected}&service=${service}`);
+
     const prepData = await prep.json();
     const accept = prepData.accept;
 
@@ -430,7 +451,8 @@ payBtn.onclick = async()=>{
             }
           }
         }),
-        symbol: selected
+        symbol: selected,
+	service
       })
     });
 
@@ -439,11 +461,8 @@ payBtn.onclick = async()=>{
     try{ data = JSON.parse(txt); }
     catch { const m = txt.match(/\{[\s\S]*\}/); if(m) data = JSON.parse(m[0]); }
 
-    if(data?.signal){
-      showResult(data);
-    } else {
-      alert("Server returned: " + txt);
-    }
+    renderResult(data);
+
 
   } catch(err){
     alert(err.message || err);
@@ -469,6 +488,69 @@ function showResult(obj){
 }
 
 updateDonut(0);
+
+function renderResult(data){
+    const out = document.getElementById("output");
+    out.innerHTML = ""; // clear
+
+    // === CASE 1: Simple or Detailed Signal ===
+    if (data?.signal) {
+        out.innerHTML = `
+            <div class="p-4 bg-[#081222] border border-slate-800 rounded-xl">
+                <div class="text-xl font-bold text-slate-200">${data.signal}</div>
+                <div class="text-slate-400 mt-1">Conviction: ${(data.conviction * 100).toFixed(1)}%</div>
+            </div>
+        `;
+        return;
+    }
+
+    // === CASE 2: analysis-simple ===
+    if (data?.market) {
+        out.innerHTML = `
+            <div class="p-4 bg-[#081222] border border-slate-800 rounded-xl">
+                <div class="text-lg font-bold text-slate-200 mb-2">Market Summary</div>
+                <div class="text-slate-300 whitespace-pre-line">${data.market}</div>
+            </div>
+        `;
+        return;
+    }
+
+    // === CASE 3: analysis ===
+    if (data?.toon || data?.report) {
+        let toonHTML = "";
+        if (data.toon) {
+            toonHTML = `
+                <div class="mb-4 p-4 bg-[#091125] border border-slate-800 rounded-xl">
+                    <div class="text-lg font-bold text-slate-200">TOON Signal</div>
+                    <div class="text-slate-300 mt-2">Symbol: ${data.toon.symbol}</div>
+                    <div class="text-slate-300">Signal: ${data.toon.signal}</div>
+                    <div class="text-slate-300">Conviction: ${(data.toon.conviction * 100).toFixed(1)}%</div>
+                </div>
+            `;
+        }
+
+        let reportHTML = "";
+        if (data.report) {
+            reportHTML = `
+                <div class="p-4 bg-[#081222] border border-slate-800 rounded-xl">
+                    <div class="text-lg font-bold text-slate-200 mb-2">Market Analysis</div>
+                    <div class="text-slate-300 whitespace-pre-line">${data.report}</div>
+                </div>
+            `;
+        }
+
+        out.innerHTML = toonHTML + reportHTML;
+        return;
+    }
+
+    // === FALLBACK ===
+    out.innerHTML = `
+        <div class="p-4 bg-[#081222] border border-red-800 text-red-300 rounded-xl">
+            Unknown response:<br><pre>${JSON.stringify(data,null,2)}</pre>
+        </div>
+    `;
+}
+
 </script>
 
 </body>
