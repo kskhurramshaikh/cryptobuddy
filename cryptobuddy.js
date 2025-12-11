@@ -199,6 +199,78 @@ app.use((req, res, next) => {
 });
 
 
+// -----------------------------
+// PREPARE PAYMENT (used by UI)
+// -----------------------------
+app.get("/prepare-payment", (req, res) => {
+  try {
+    const symbol = req.query.symbol || "BTC";
+
+    // Price (USDC) for /signal-simple (6 decimals)
+    const priceUSDC = Number(process.env.PRICE_SIGNAL_SIMPLE_USDC || 0.10); // default 0.10 USDC
+    const amount6 = Math.round(priceUSDC * 1e6); // e.g. 0.10 -> 100000
+
+    const accept = {
+      payTo: process.env.AGENT_WALLET,
+      asset: process.env.USDC_CONTRACT || "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      maxAmountRequired: amount6,
+      maxTimeoutSeconds: Number(process.env.PAYMENT_TIMEOUT || 60),
+      resource: `https://${req.get("host")}/signal-simple`,
+      extra: { name: "USD Coin", version: "2" }
+    };
+
+    res.json({ accept, symbol });
+  } catch (err) {
+    console.error("❌ /prepare-payment error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// -----------------------------
+// SUBMIT PROOF (from UI after signing)
+// -----------------------------
+app.post("/submit-proof", async (req, res) => {
+  try {
+    const { signedXPayment, symbol } = req.body || {};
+    if (!signedXPayment) return res.status(400).json({ error: "signedXPayment is required" });
+    const sym = symbol || "BTC";
+
+    // base64 encode signed payload (UI already sends JSON string)
+    const encoded = Buffer.from(typeof signedXPayment === "string" ? signedXPayment : JSON.stringify(signedXPayment)).toString("base64");
+
+    // Target internal endpoint (same host)
+    const target = `${req.protocol}://${req.get("host")}/signal-simple?symbol=${encodeURIComponent(sym)}`;
+
+    console.log("➡ Forwarding X-PAYMENT to:", target);
+
+    const r = await fetch(target, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-PAYMENT": encoded
+      },
+      // keep body empty (signal-simple reads req.query.symbol)
+      body: JSON.stringify({})
+    });
+
+    const contentType = r.headers.get("content-type") || "";
+    const txt = await r.text();
+
+    // Try to parse JSON; otherwise return raw text
+    try {
+      const data = JSON.parse(txt);
+      return res.json(data);
+    } catch (e) {
+      // return plaintext (useful for debugging)
+      res.type("text").send(txt);
+    }
+  } catch (err) {
+    console.error("❌ /submit-proof error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 /* ============================================================
    SIGNER SUBMIT → forwards to internal signal generator
 ============================================================ */
