@@ -18,7 +18,36 @@ const app = express();
 app.use(cors());
 
 app.use(express.json());
-app.use(helmet());
+import helmet from "helmet";
+
+// Allow Tailwind CDN / Ethers CDN / Cryptologos
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+        "script-src": [
+          "'self'",
+          "https://cdn.tailwindcss.com",
+          "https://cdn.jsdelivr.net"
+        ],
+        "img-src": [
+          "'self'",
+          "data:",
+          "https://cryptologos.cc"
+        ],
+        "style-src": [
+          "'self'",
+          "'unsafe-inline'"
+        ],
+        "connect-src": [
+          "'self'"
+        ]
+      },
+    },
+  })
+);
+
 app.use(morgan("dev"));
 
 // ⬇⬇ ADD THIS BLOCK HERE
