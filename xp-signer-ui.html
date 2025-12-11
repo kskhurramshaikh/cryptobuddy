@@ -1,613 +1,583 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>CryptoBuddy — Terminal (Final v2)</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>CryptoBuddy — AI Signals & Market Analysis</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 
-<!-- Tailwind -->
-<script src="https://cdn.tailwindcss.com"></script>
-<!-- Ethers -->
-<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <style>
+    body { background:#061021; color:#cbd5e1; font-family:Inter,ui-sans-serif; }
+    .rounded-xl { border-radius:1rem; }
+    .muted { color:#94a3b8; }
+    .sel-icon { width:20px; height:20px; margin-right:8px; }
 
-<style>
-  :root{
-    --bg:#06070a;
-    --panel:#0f1620;
-    --muted:#94a3b8;
-    --accent1:#0EA5A4;
-    --accent2:#059669;
-  }
-
-  body{ background: radial-gradient(1200px 600px at 10% 10%, #071029 0%, #04050a 40%, var(--bg) 100%); }
-
-  .glass-2 { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.015)); border:1px solid rgba(255,255,255,0.03); backdrop-filter: blur(8px); }
-  .neon-btn { background: linear-gradient(90deg,var(--accent1), var(--accent2)); box-shadow: 0 10px 30px rgba(14,165,164,0.12); }
-  .neon-outline { box-shadow: 0 0 24px rgba(14,165,164,0.06), inset 0 1px 0 rgba(255,255,255,0.02); }
-  .ticker { color: #9fbff5; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
-  .typeahead-list { max-height: 220px; overflow:auto; }
-
-  .donut-center {
-    font-weight:700;
-    fill:#FFFFFF;
-    color:#FFFFFF;
-  }
-
-  .sel-icon { width:28px; height:28px; border-radius:8px; object-fit:contain; background:#071022; border:1px solid rgba(255,255,255,0.03); }
-
-  .input-with-icon { display:flex; align-items:center; gap:10px; padding:0 12px; }
-  .input-with-icon input { flex:1; background:transparent; border:0; outline:0; color: #e6eef8; padding:12px 0; }
-
-  .cube-wrap {
-    width:44px;
-    height:44px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:linear-gradient(180deg,#07111a,#071026);
-    border-radius:10px;
-    border:1px solid rgba(255,255,255,0.03);
-    overflow:hidden;
-  }
-</style>
+    /* Donut center */
+    .donut-center {
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-direction:column;
+      pointer-events:none;
+    }
+  </style>
 </head>
 
-<body class="min-h-screen text-slate-100">
+<body class="p-6">
+  <div class="max-w-6xl mx-auto">
+    <h1 class="text-2xl text-white font-semibold mb-4">CryptoBuddy — Trade Terminal</h1>
 
-<div class="max-w-5xl mx-auto px-6 py-10">
+    <div class="grid lg:grid-cols-3 gap-6">
+      <!-- LEFT SIDE -->
+      <section class="lg:col-span-2 space-y-4">
 
-  <!-- HEADER -->
-  <header class="flex items-center justify-between gap-6 mb-6">
-    <div class="flex items-center gap-4">
+        <!-- SEARCH -->
+        <div>
+          <label class="text-sm muted">Search symbol</label>
 
-      <!-- ⭐ REPLACED SVG WITH PNG (ONLY CHANGE MADE) ⭐ -->
-      <div class="cube-wrap">
-        <img src="blockverse-logo.png" alt="Blockverse" class="w-full h-full object-contain" />
-      </div>
+          <div class="relative mt-3">
+            <div id="inputIconWrap"
+              class="bg-transparent border border-slate-800 rounded-xl px-3 py-2 flex items-center">
+              <img id="selectedIconSmall" src="" class="sel-icon hidden"/>
+              <input id="symbolInput"
+                placeholder="Type or search (BTC, ETH, SOL...)"
+                class="bg-transparent text-white placeholder:text-slate-500 w-full"
+                autocomplete="off"/>
+            </div>
 
-      <div>
-        <div class="text-2xl font-extrabold">Blockverse</div>
-        <div class="text-xs text-slate-400">CryptoBuddy • Pay-to-Signal</div>
-      </div>
-    </div>
-
-    <div class="px-3 py-1 rounded-xl bg-slate-800 text-xs neon-outline">
-      Base • USDC
-    </div>
-  </header>
-
-  <!-- MAIN -->
-  <main class="glass-2 rounded-2xl p-6 neon-outline">
-
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-      <!-- SEARCH + INFO -->
-      <section class="lg:col-span-2">
-        <label class="text-sm text-slate-300">Search symbol</label>
-
-        <div class="relative mt-3">
-          <div id="inputIconWrap" class="input-with-icon bg-transparent border border-slate-800 rounded-xl px-3 py-2">
-            <img id="selectedIconSmall" src="" alt="" class="sel-icon hidden" />
-            <input id="symbolInput" placeholder="Type or search (BTC, ETH, SOL...)" class="text-white placeholder:text-slate-500" autocomplete="off"/>
+            <div id="typeahead"
+              class="absolute left-0 right-0 mt-2 bg-[#071026] border border-slate-800 rounded-xl hidden z-40 max-h-48 overflow-y-auto">
+            </div>
           </div>
 
-          <div id="typeahead" class="absolute left-0 right-0 mt-2 bg-[#071026] border border-slate-800 rounded-xl typeahead-list hidden z-40"></div>
+          <!-- SERVICE -->
+          <div class="mt-4 p-4 rounded-xl bg-[#071024] border border-slate-800">
+            <label class="text-sm text-slate-300">Choose Service</label>
+            <select id="service"
+              class="w-full mt-2 bg-[#091125] border border-slate-800 text-slate-200 p-3 rounded-xl">
+              <option value="signal-simple">Simple Signal</option>
+              <option value="signal">Detailed Signal</option>
+              <option value="analysis-simple">Simple Market Analysis</option>
+              <option value="analysis">Detailed Market Analysis</option>
+            </select>
+          </div>
+
+          <!-- PRICE + INFO -->
+          <div class="mt-4 flex gap-4">
+
+            <div class="w-28 p-3 rounded-lg bg-[#091125] border border-slate-800">
+              <div class="text-xs text-slate-400">Price</div>
+              <div id="priceBadge" class="text-lg font-semibold mt-1">0.10 USDC</div>
+            </div>
+
+            <div class="flex-1 p-3 rounded-lg bg-[#071024] border border-slate-800">
+              <div id="descTitle" class="text-sm text-slate-300">Select a symbol to see what you get.</div>
+              <div id="descSub" class="text-xs text-slate-500 mt-2">AI Signal or Market Analysis output</div>
+            </div>
+
+          </div>
         </div>
 
+        <!-- PAY + RIGHT RESULT BLOCK -->
+        <div class="grid lg:grid-cols-2 gap-4">
 
-<!-- SERVICE SELECTOR (FULL WIDTH) -->
-<div class="mt-4 p-4 rounded-xl bg-[#071024] border border-slate-800">
-  <label class="text-sm text-slate-300">Choose Service</label>
-  <select id="service"
-    class="w-full mt-2 bg-[#091125] border border-slate-800 text-slate-200 p-3 rounded-xl focus:outline-none focus:ring-1 focus:ring-slate-600">
-    <option value="signal-simple">Simple Signal</option>
-    <option value="signal">Detailed Signal</option>
-    <option value="analysis-simple">Simple Market Analysis</option>
-    <option value="analysis">Detailed Market Analysis</option>
-  </select>
-</div>
+          <!-- PAY BLOCK -->
+          <div class="p-6 rounded-xl bg-[#071022] border border-slate-800">
+            <div class="flex items-center gap-3">
+              <img id="selectedIconLarge" src="" class="w-10 h-10 rounded-md hidden"/>
+              <div>
+                <div id="selectedSymbol" class="text-lg font-semibold">—</div>
+                <div id="ticker" class="text-sm muted">CryptoBuddy AI</div>
+              </div>
+            </div>
 
-
-
-
-        <div class="mt-4 flex gap-4">
-          <div class="w-28 p-3 rounded-lg bg-[#091125] border border-slate-800">
-
-         <div class="text-xs text-slate-400">Price</div>
-            <div id="priceBadge" class="text-lg font-semibold mt-1">0.10 USDC</div>
+            <div class="mt-6">
+              <button id="payBtn"
+                class="w-full bg-indigo-600 text-white py-3 rounded-xl disabled:opacity-60"
+                disabled>
+                Pay & Unlock
+              </button>
+              <div id="payLabel" class="text-xs muted mt-2">Connect wallet to sign</div>
+            </div>
           </div>
 
-          <div class="flex-1 p-3 rounded-lg bg-[#071024] border border-slate-800">
-	<div id="descTitle" class="text-sm text-slate-300">Select a symbol to see what you get.</div>
-    <div id="descSub" class="text-xs text-slate-500 mt-2">Signal: BUY / SELL / HOLD + Conviction score</div>
+          <!-- RESULT BLOCK -->
+          <div class="p-6 rounded-xl bg-[#071022] border border-slate-800">
+            <div id="resultTop">
+              <div>
+                <div class="text-sm muted">Result</div>
+                <div class="text-xs text-slate-500">Paid responses appear here</div>
+              </div>
+            </div>
+
+            <div id="noResult"
+              class="p-6 mt-2 rounded-md bg-[#06101b] border border-slate-800 text-slate-500">
+              No result yet — choose a symbol and pay to unlock.
+            </div>
+
+            <div id="output" class="mt-4 text-slate-200"></div>
           </div>
+
         </div>
       </section>
 
-      <!-- RIGHT PANEL -->
-      <aside class="p-4 rounded-xl bg-[#071025] border border-slate-800 flex flex-col justify-between items-stretch">
-        <div>
-          <div class="text-xs text-slate-400">Selected</div>
-          <div class="mt-2 flex items-center gap-3">
-            <img id="selectedIconLarge" src="" alt="" class="sel-icon hidden" />
-            <div id="selectedSymbol" class="text-2xl font-extrabold">—</div>
-          </div>
-        </div>
+      <!-- RIGHT SIDE: Original premium layout -->
+      <section class="space-y-4">
+        <div class="p-4 rounded-xl bg-[#071024] border border-slate-800">
 
-        <button id="payBtn"
-          class="w-full mt-6 py-3 rounded-xl neon-btn font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
-          disabled>
-          <svg width="18" height="18" viewBox="0 0 24 24" class="inline-block" aria-hidden>
-            <path d="M2 12 L12 2 L22 12 L12 22 Z" fill="rgba(255,255,255,0.06)"/>
-          </svg>
-          <span id="payLabel">Pay with MetaMask</span>
-          <svg id="paySpinner" class="hidden animate-spin" width="16" height="16" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.4)" stroke-width="3" fill="none"/>
-            <path d="M22 12a10 10 0 0 0-10-10" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"/>
-          </svg>
-        </button>
-      </aside>
+          <div id="resultCard" class="grid grid-cols-2 gap-4">
 
-    </div>
-
-    <!-- TICKER -->
-    <div class="mt-6 border-t border-slate-800 pt-4 flex items-center justify-between">
-      <div class="text-sm ticker" id="ticker">—</div>
-      <div class="text-xs text-slate-500">Updated: <span id="lastUpdate">—</span></div>
-    </div>
-
-    <!-- RESULTS -->
-    <section class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-      <div class="lg:col-span-2 p-6 rounded-xl bg-[#071022] border border-slate-800">
-        <div id="resultTop" class="hidden">
-          <div class="flex justify-between">
-            <div>
-              <div id="resultSignal" class="text-4xl font-extrabold"></div>
-              <div id="resultSymbol" class="text-sm text-slate-400 mt-1"></div>
+            <!-- LEFT SIGNAL CARD -->
+            <div class="p-4 bg-[#061623] rounded-xl border border-slate-800">
+              <div id="resultSignal" class="text-4xl font-extrabold text-white">—</div>
+              <div id="resultSymbol" class="text-sm muted mt-2">—</div>
+              <div id="resultDesc" class="mt-3 text-sm text-slate-300">
+                Select a symbol to get AI insights.
+              </div>
             </div>
 
-            <div class="text-right">
-              <div id="convictionNum" class="text-4xl font-extrabold"></div>
-              <div id="convictionLabel" class="text-sm text-slate-300 mt-1"></div>
+            <!-- RIGHT DONUT -->
+            <div class="relative p-4 bg-[#061623] rounded-xl border border-slate-800 flex items-center justify-center">
+
+              <svg id="donutSvg" viewBox="0 0 36 36" class="w-36 h-36">
+                <defs>
+                  <linearGradient id="gradLow" x1="0" x2="1">
+                    <stop offset="0%" stop-color="#ef4444"/>
+                    <stop offset="100%" stop-color="#f97316"/>
+                  </linearGradient>
+                  <linearGradient id="gradMid" x1="0" x2="1">
+                    <stop offset="0%" stop-color="#f59e0b"/>
+                    <stop offset="100%" stop-color="#eab308"/>
+                  </linearGradient>
+                  <linearGradient id="gradHigh" x1="0" x2="1">
+                    <stop offset="0%" stop-color="#10b981"/>
+                    <stop offset="100%" stop-color="#06b6d4"/>
+                  </linearGradient>
+                </defs>
+
+                <g transform="translate(18,18)">
+                  <circle r="15" cx="0" cy="0"
+                    fill="none" stroke="#0b1220" stroke-width="6"/>
+                  <circle id="donutArc"
+                    r="15" cx="0" cy="0"
+                    fill="none" stroke="#7c3aed" stroke-width="6"
+                    stroke-linecap="round"
+                    stroke-dasharray="0 100"
+                    transform="rotate(-90)"/>
+                </g>
+              </svg>
+
+              <div class="donut-center">
+                <div id="convictionNum" class="text-2xl font-bold text-white">--</div>
+                <div id="signalStrengthLabel" class="text-xs muted mt-1">N/A</div>
+              </div>
+
             </div>
-          </div>
 
-          <div class="mt-6 text-sm text-slate-300">
-            CryptoBuddy’s ensemble of AI models produces this signal using liquidity, momentum, OI, CVD and regime detection.
           </div>
         </div>
 
-        <div id="noResult" class="p-6 mt-2 rounded-md bg-[#06101b] border border-slate-800 text-slate-500">
-          No signal yet — choose a symbol and pay to unlock.
+        <div class="p-3 rounded-xl bg-[#071024] border border-slate-800 text-sm muted">
+          Donut shows conviction: Low / Medium / Strong. Grey = no conviction provided.
         </div>
-         <div id="output" class="mt-4 text-slate-200"></div>
-      </div>
+      </section>
 
-      <!-- DONUT -->
-      <aside class="p-6 rounded-xl bg-[#071022] border border-slate-800 flex flex-col items-center">
+    </div>
+  </div>
 
-        <div id="signalStrengthLabel" class="text-sm font-semibold text-slate-300 mb-3">—</div>
+  <!-- SCRIPT -->
+  <script>
+  //////////////////////////////////////
+  // ICONS — using cryptologos.cc
+  //////////////////////////////////////
+  const ICONS = {
+    BTC:"https://cryptologos.cc/logos/bitcoin-btc-logo.png",
+    ETH:"https://cryptologos.cc/logos/ethereum-eth-logo.png",
+    BNB:"https://cryptologos.cc/logos/bnb-bnb-logo.png",
+    SOL:"https://cryptologos.cc/logos/solana-sol-logo.png",
+    XRP:"https://cryptologos.cc/logos/xrp-xrp-logo.png",
+    ADA:"https://cryptologos.cc/logos/cardano-ada-logo.png",
+    AVAX:"https://cryptologos.cc/logos/avalanche-avax-logo.png",
+    DOGE:"https://cryptologos.cc/logos/dogecoin-doge-logo.png",
+    TRX:"https://cryptologos.cc/logos/tron-trx-logo.png",
+    DOT:"https://cryptologos.cc/logos/polkadot-new-dot-logo.png",
+    MATIC:"https://cryptologos.cc/logos/polygon-matic-logo.png",
+    LINK:"https://cryptologos.cc/logos/chainlink-link-logo.png",
+    LTC:"https://cryptologos.cc/logos/litecoin-ltc-logo.png",
+    UNI:"https://cryptologos.cc/logos/uniswap-uni-logo.png",
+    BCH:"https://cryptologos.cc/logos/bitcoin-cash-bch-logo.png",
+    XLM:"https://cryptologos.cc/logos/stellar-xlm-logo.png",
+    OP:"https://cryptologos.cc/logos/optimism-ethereum-op-logo.png",
+    ARB:"https://cryptologos.cc/logos/arbitrum-arb-logo.png",
+    FIL:"https://cryptologos.cc/logos/filecoin-fil-logo.png",
+    ATOM:"https://cryptologos.cc/logos/cosmos-atom-logo.png"
+  };
 
-        <svg id="donut" width="160" height="160" viewBox="0 0 42 42">
-          <circle cx="21" cy="21" r="12" fill="#0b1120"/>
-          <g transform="rotate(-90 21 21)">
-            <circle id="donut-bg" cx="21" cy="21" r="12" fill="none" stroke="#0b1220" stroke-width="6"/>
-            <circle id="donut-fg" cx="21" cy="21" r="12" fill="none"
-                    stroke="url(#gradLow)"
-                    stroke-width="6" stroke-linecap="round"
-                    stroke-dasharray="0 1000"/>
-          </g>
+  //////////////////////////////////////
+  // SERVICE CONFIG
+  //////////////////////////////////////
+  const SERVICE_PRICES = {
+    "signal-simple": 0.10,
+    "signal": 0.50,
+    "analysis-simple": 0.10,
+    "analysis": 1.00
+  };
 
-          <defs>
-            <linearGradient id="gradLow" x1="0%" x2="100%">
-              <stop offset="0%" stop-color="#60a5fa"/>
-              <stop offset="100%" stop-color="#7c3aed"/>
-            </linearGradient>
+  const SERVICE_DESCRIPTIONS = {
+    "signal-simple": {
+      title: "Unlock AI signal for SYMBOL",
+      subtitle: "BUY / SELL / HOLD + conviction score"
+    },
+    "signal": {
+      title: "Unlock full AI signal for SYMBOL",
+      subtitle: "With detailed explanation"
+    },
+    "analysis-simple": {
+      title: "MARKET ANALYSIS",
+      subtitle: "Short-term market outlook"
+    },
+    "analysis": {
+      title: "MARKET ANALYSIS",
+      subtitle: "Deep market analysis & forecasting"
+    }
+  };
 
-            <linearGradient id="gradMid" x1="0%" x2="100%">
-              <stop offset="0%" stop-color="#f59e0b"/>
-              <stop offset="100%" stop-color="#f97316"/>
-            </linearGradient>
+  // DOM refs
+  const symbolInput = document.getElementById("symbolInput");
+  const typeahead = document.getElementById("typeahead");
+  const selectedSymbolEl = document.getElementById("selectedSymbol");
+  const selectedIconSmall = document.getElementById("selectedIconSmall");
+  const selectedIconLarge = document.getElementById("selectedIconLarge");
+  const serviceSelect = document.getElementById("service");
+  const priceBadge = document.getElementById("priceBadge");
+  const descTitle = document.getElementById("descTitle");
+  const descSub = document.getElementById("descSub");
+  const payBtn = document.getElementById("payBtn");
+  const payLabel = document.getElementById("payLabel");
+  const resultSignalEl = document.getElementById("resultSignal");
+  const resultSymbolEl = document.getElementById("resultSymbol");
+  const resultDescEl = document.getElementById("resultDesc");
+  const donutArc = document.getElementById("donutArc");
+  const convictionNumEl = document.getElementById("convictionNum");
+  const strengthLabelEl = document.getElementById("signalStrengthLabel");
+  const output = document.getElementById("output");
 
-            <linearGradient id="gradHigh" x1="0%" x2="100%">
-              <stop offset="0%" stop-color="#10b981"/>
-              <stop offset="100%" stop-color="#059669"/>
-            </linearGradient>
-          </defs>
+  let selected = null;
+  const SYMBOLS = Object.keys(ICONS);
 
-          <text id="donut-text" x="21" y="23" text-anchor="middle" font-size="7" class="donut-center">0</text>
-        </svg>
+  //////////////////////////////////////
+  // TYPEAHEAD
+  //////////////////////////////////////
+  symbolInput.addEventListener("input", (e)=>{
+    const q = e.target.value.trim().toUpperCase();
+    if (!q) { typeahead.classList.add("hidden"); return; }
 
-        <div class="mt-4 text-sm text-slate-300">Success Rate</div>
-        <div class="text-xs text-slate-500 mt-2">0–49 Low • 50–79 Medium • 80–100 Strong</div>
-      </aside>
+    const matches = SYMBOLS.filter(s=>s.startsWith(q)).slice(0,12);
 
-    </section>
+    typeahead.innerHTML = matches.map(sym => {
+      const ico = ICONS[sym] || "";
+      const img = ico ? `<img src="${ico}" class="inline-block w-5 h-5 mr-2 align-middle"/>` : "";
+      return `<div class="px-3 py-2 hover:bg-[#0b1a2a] cursor-pointer flex items-center">${img}<span>${sym}</span></div>`;
+    }).join("");
 
-  </main>
-</div>
-
-
-<script>
-
-// === Price mapping (must match .env) ===
-const SERVICE_PRICES = {
-  "signal-simple": 0.10,
-  "signal": 0.50,
-  "analysis-simple": 0.10,
-  "analysis": 1.00
-};
-
-// === Descriptions for each service (static) ===
-const SERVICE_DESCRIPTIONS = {
-  "signal-simple": {
-    title: "Unlock AI powered signal:",
-    subtitle: "Signal: BUY / SELL / HOLD + Conviction score"
-  },
-  "signal": {
-    title: "Unlock full AI signal:",
-    subtitle: "Full explanation + momentum, volatility, liquidity model & conviction score"
-  },
-  "analysis-simple": {
-    title: "Unlock simple market analysis:",
-    subtitle: "Short-term trend, momentum, support/resistance snapshot"
-  },
-  "analysis": {
-    title: "Unlock deep market analysis:",
-    subtitle: "Multi-factor analysis: trend regime, order flow, volatility, liquidity & forecast"
-  }
-};
-
-
-const ICONS = {
-  BTC:"https://cryptologos.cc/logos/bitcoin-btc-logo.png",
-  ETH:"https://cryptologos.cc/logos/ethereum-eth-logo.png",
-  BNB:"https://cryptologos.cc/logos/bnb-bnb-logo.png",
-  SOL:"https://cryptologos.cc/logos/solana-sol-logo.png",
-  XRP:"https://cryptologos.cc/logos/xrp-xrp-logo.png",
-  ADA:"https://cryptologos.cc/logos/cardano-ada-logo.png",
-  DOGE:"https://cryptologos.cc/logos/dogecoin-doge-logo.png",
-  AVAX:"https://cryptologos.cc/logos/avalanche-avax-logo.png",
-  TRX:"https://cryptologos.cc/logos/tron-trx-logo.png",
-  LINK:"https://cryptologos.cc/logos/chainlink-link-logo.png"
-};
-
-const SYMBOLS = [
-  { sym:"BTC", name:"Bitcoin" },
-  { sym:"ETH", name:"Ethereum" },
-  { sym:"BNB", name:"BNB" },
-  { sym:"SOL", name:"Solana" },
-  { sym:"XRP", name:"XRP" },
-  { sym:"ADA", name:"Cardano" },
-  { sym:"DOGE", name:"Dogecoin" },
-  { sym:"AVAX", name:"Avalanche" },
-  { sym:"TRX", name:"TRON" },
-  { sym:"LINK", name:"Chainlink" }
-];
-
-const PRICE_USDC = 0.10;
-
-const typeahead = document.getElementById('typeahead');
-const symbolInput = document.getElementById('symbolInput');
-const selectedSymbol = document.getElementById('selectedSymbol');
-const selectedIconSmall = document.getElementById('selectedIconSmall');
-const selectedIconLarge = document.getElementById('selectedIconLarge');
-const payBtn = document.getElementById('payBtn');
-const payLabel = document.getElementById('payLabel');
-const paySpinner = document.getElementById('paySpinner');
-const desc = document.getElementById('desc');
-const ticker = document.getElementById('ticker');
-const lastUpdate = document.getElementById('lastUpdate');
-const signalLabel = document.getElementById('signalStrengthLabel');
-
-let selected = null;
-
-// === Update price when service changes ===
-document.getElementById("service").addEventListener("change", (e) => {
-    const svc = e.target.value;
-    const price = SERVICE_PRICES[svc] ?? 0;
-    document.getElementById("priceBadge").innerText = `${price.toFixed(2)} USDC`;
-
- // === Update description dynamically ===
-    const desc = SERVICE_DESCRIPTIONS[svc];
-    document.getElementById("descTitle").innerText = desc.title;
-    document.getElementById("descSub").innerText = desc.subtitle;
-});
-
-
-symbolInput.addEventListener('input', e=>{
-  const v = e.target.value.toUpperCase();
-  const filtered = SYMBOLS.filter(s => s.sym.includes(v) || s.name.toUpperCase().includes(v));
-  renderList(filtered);
-});
-
-function renderList(list){
-  typeahead.innerHTML = "";
-  if(!list.length){ typeahead.classList.add("hidden"); return; }
-
-  list.forEach(item=>{
-    const row = document.createElement("div");
-    row.className = "px-3 py-3 hover:bg-slate-900 cursor-pointer";
-    row.innerHTML = `
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <img src="${ICONS[item.sym]}" class="w-8 h-8 rounded-md border border-slate-800 object-contain bg-slate-900" />
-          <div>
-            <div class="font-semibold">${item.sym}</div>
-            <div class="text-xs text-slate-400">${item.name}</div>
-          </div>
-        </div>
-        <div class="text-xs text-slate-400">${PRICE_USDC.toFixed(2)} USDC</div>
-      </div>
-    `;
-    row.onclick = ()=> selectSym(item.sym);
-    typeahead.appendChild(row);
+    typeahead.classList.remove("hidden");
   });
 
-  typeahead.classList.remove("hidden");
-}
+  typeahead.addEventListener("click", e=>{
+    const item = e.target.closest("div");
+    if (!item) return;
+    const sym = item.textContent.trim();
+    selectSym(sym);
+  });
 
-document.addEventListener('click', e=>{
-  if(!typeahead.contains(e.target) && e.target !== symbolInput) typeahead.classList.add('hidden');
-});
+  //////////////////////////////////////
+  // SELECT SYMBOL
+  //////////////////////////////////////
+  function selectSym(sym){
+    selected = sym;
+    selectedSymbolEl.textContent = sym;
+    symbolInput.value = sym;
+    typeahead.classList.add("hidden");
+    payBtn.disabled = false;
 
-function selectSym(sym){
-  selected = sym;
-  symbolInput.value = sym;
-  selectedSymbol.textContent = sym;
+    const ico = ICONS[sym];
+    if (ico){
+      selectedIconSmall.src = ico;
+      selectedIconLarge.src = ico;
+      selectedIconSmall.classList.remove("hidden");
+      selectedIconLarge.classList.remove("hidden");
+    } else {
+      selectedIconSmall.classList.add("hidden");
+      selectedIconLarge.classList.add("hidden");
+    }
 
-  const ico = ICONS[sym];
-  if(ico){
-    selectedIconSmall.src = ico;
-    selectedIconSmall.classList.remove('hidden');
-    selectedIconLarge.src = ico;
-    selectedIconLarge.classList.remove('hidden');
-  } else {
-    selectedIconSmall.classList.add('hidden');
-    selectedIconLarge.classList.add('hidden');
+    const svc = serviceSelect.value;
+    const price = SERVICE_PRICES[svc];
+    priceBadge.innerText = `${price.toFixed(2)} USDC`;
+
+    const d = SERVICE_DESCRIPTIONS[svc];
+    descTitle.textContent = d.title.replace("SYMBOL", sym);
+    descSub.textContent = d.subtitle;
   }
 
-  typeahead.classList.add('hidden');
-  payBtn.disabled = false;
+  //////////////////////////////////////
+  // SERVICE SELECT CHANGE
+  //////////////////////////////////////
+  serviceSelect.addEventListener("change", ()=>{
+    if (!selected) return;
 
+    const svc = serviceSelect.value;
+    const d = SERVICE_DESCRIPTIONS[svc];
+    descTitle.textContent = d.title.replace("SYMBOL", selected);
+    descSub.textContent = d.subtitle;
 
-const svc = document.getElementById("service").value;
-const descObj = SERVICE_DESCRIPTIONS[svc];
+    const price = SERVICE_PRICES[svc];
+    priceBadge.innerText = `${price.toFixed(2)} USDC`;
+  });
 
-document.getElementById("descTitle").innerText = descObj.title.replace("###", sym).replace("SYMBOL", sym);
-document.getElementById("descSub").innerText = descObj.subtitle;
+  //////////////////////////////////////
+  // DONUT
+  //////////////////////////////////////
+  function clamp(n){ return Math.max(0, Math.min(100,n)); }
 
+  function updateDonut(score){
+    const v = clamp(Math.round(score));
+    donutArc.style.strokeDasharray = `${v} ${100-v}`;
+    convictionNumEl.textContent = v;
+    convictionNumEl.style.color = "#fff";
 
-  ticker.textContent = `Powered By CryptoBuddy AI`;
-  lastUpdate.textContent = new Date().toLocaleString();
-
-// === update price based on selected service ===
-const price = SERVICE_PRICES[svc] ?? 0;
-document.getElementById("priceBadge").innerText = `${price.toFixed(2)} USDC`;
-
-}
-
-function updateDonut(score){
-  const circle = document.getElementById("donut-fg");
-  const center = document.getElementById("donut-text");
-
-  const r = 12;
-  const circ = 2*Math.PI*r;
-  const pct = Math.max(0, Math.min(score, 100));
-  const dash = circ * (pct/100);
-
-  circle.setAttribute("stroke-dasharray", `${dash} ${circ-dash}`);
-
-  if(pct >= 80){
-    circle.setAttribute("stroke","url(#gradHigh)");
-    signalLabel.textContent = "STRONG";
-    signalLabel.style.color = "#10b981";
-  } else if(pct >= 50){
-    circle.setAttribute("stroke","url(#gradMid)");
-    signalLabel.textContent = "MEDIUM";
-    signalLabel.style.color = "#f59e0b";
-  } else {
-    circle.setAttribute("stroke","url(#gradLow)");
-    signalLabel.textContent = "LOW";
-    signalLabel.style.color = "#60a5fa";
+    if (v >= 80){
+      donutArc.style.stroke = "url(#gradHigh)";
+      strengthLabelEl.textContent = "STRONG";
+      strengthLabelEl.style.color = "#34d399";
+    } else if (v >= 50){
+      donutArc.style.stroke = "url(#gradMid)";
+      strengthLabelEl.textContent = "MEDIUM";
+      strengthLabelEl.style.color = "#f59e0b";
+    } else {
+      donutArc.style.stroke = "url(#gradLow)";
+      strengthLabelEl.textContent = "LOW";
+      strengthLabelEl.style.color = "#ef4444";
+    }
   }
 
-  center.textContent = pct;
-}
+  function updateDonutNeutral(){
+    donutArc.style.strokeDasharray = "0 100";
+    donutArc.style.stroke = "#475569";
+    convictionNumEl.textContent = "--";
+    convictionNumEl.style.color = "#94a3b8";
+    strengthLabelEl.textContent = "N/A";
+    strengthLabelEl.style.color = "#94a3b8";
+  }
 
-payBtn.onclick = async()=>{
+  //////////////////////////////////////
+  // UNIFIED RESULT RENDERER
+  //////////////////////////////////////
+  function showUnifiedResult(service, result){
+    let signal = null;
+    let conviction = null;
+    let timestamp = null;
+    let symbol = null;
+    let description = "";
 
-  if(!selected) return;
-  if(!window.ethereum){ alert("MetaMask missing"); return; }
+    if (service === "signal-simple"){
+      signal = (result.signal || "SIGNAL").toUpperCase();
+      conviction = result.conviction ?? null;
+      symbol = result.symbol || selected;
+      timestamp = result.timestamp || Date.now();
+      description = result.explanation || `AI signal indicates ${signal} for ${symbol}.`;
+    }
+    else if (service === "signal"){
+      signal = (result.signal || "SIGNAL").toUpperCase();
+      conviction = result.conviction ?? null;
+      symbol = result.symbol || selected;
+      timestamp = result.timestamp || Date.now();
+      description = result.explanation || result.report || "";
+    }
+    else if (service === "analysis-simple"){
+      signal = "MARKET ANALYSIS";
+      conviction = null;
+      symbol = result.symbol || selected;
+      timestamp = result.timestamp || Date.now();
+      description = result.market || result.analysis || "No analysis provided.";
+    }
+    else if (service === "analysis"){
+      const t = result.toon || {};
+      signal = (t.signal || "MARKET ANALYSIS").toUpperCase();
+      conviction = t.conviction ?? null;
+      symbol = t.symbol || selected;
+      timestamp = t.timestamp || Date.now();
+      description = result.report || "";
+    }
+    else {
+      signal = result.signal || "RESULT";
+      conviction = result.conviction ?? null;
+      symbol = result.symbol || selected;
+      timestamp = result.timestamp || Date.now();
+      description = result.report || JSON.stringify(result);
+    }
 
-  payBtn.disabled = true;
-  paySpinner.classList.remove("hidden");
-  payLabel.textContent = "Connecting…";
+    resultSignalEl.textContent = signal;
+    resultSymbolEl.textContent = `${symbol} · ${new Date(timestamp).toLocaleString()}`;
+    resultDescEl.textContent = description;
 
-  try {
+    if (conviction === null || conviction === undefined){
+      updateDonutNeutral();
+    } else {
+      updateDonut(conviction);
+    }
 
-    const service = document.getElementById("service").value;
-    const prep = await fetch(`/prepare-payment?symbol=${selected}&service=${service}`);
+    output.innerHTML = "";
+    document.getElementById("noResult").classList.add("hidden");
+  }
 
-    const prepData = await prep.json();
-    const accept = prepData.accept;
+  //////////////////////////////////////
+  // PREPARE PAYMENT + SIGNING + SUBMIT PROOF
+  //////////////////////////////////////
+  async function preparePayment(symbol, service){
+    const r = await fetch(`/prepare-payment?symbol=${symbol}&service=${service}`);
+    return r.json();
+  }
 
-    const accounts = await ethereum.request({ method:"eth_requestAccounts" });
+  async function submitProof(signedXPayment, symbol, service){
+    const r = await fetch("/submit-proof", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ signedXPayment, symbol, service })
+    });
+    const txt = await r.text();
+    try { return JSON.parse(txt); } catch { return txt; }
+  }
+
+  async function signWithMetaMask(accept, payTo, amount){
+    if (!window.ethereum) throw new Error("MetaMask not found");
+
+    await window.ethereum.request({ method:"eth_requestAccounts" });
+    const accounts = await window.ethereum.request({ method:"eth_accounts" });
     const payer = accounts[0];
 
-    payLabel.textContent = "Sign…";
-
-    const payTo = accept.payTo;
     const asset = accept.asset;
-    const amount = accept.maxAmountRequired;
-    const timeout = accept.maxTimeoutSeconds || 60;
-    const deadline = Math.floor(Date.now()/1000) + timeout;
-    const nonce = ethers.utils.hexlify(ethers.utils.randomBytes(32));
+    const maxAmount = accept.maxAmountRequired;
+    const chainId = 8453;
 
     const domain = {
-      name: accept.extra?.name || 'USD Coin',
-      version: accept.extra?.version || '2',
-      chainId: 8453,
-      verifyingContract: asset,
+      name: accept.extra?.name || "USD Coin",
+      version: accept.extra?.version || "2",
+      chainId,
+      verifyingContract: asset.toLowerCase()
     };
 
+    const nonce = "0x" + [...crypto.getRandomValues(new Uint8Array(32))]
+      .map(x=>x.toString(16).padStart(2,"0")).join("");
+
+    const deadline = Math.floor(Date.now()/1000) + 3600;
+
     const types = {
-      EIP712Domain: [
-        { name:"name", type:"string" },
-        { name:"version", type:"string" },
-        { name:"chainId", type:"uint256" },
-        { name:"verifyingContract", type:"address" }
+      EIP712Domain:[
+        {name:"name",type:"string"},
+        {name:"version",type:"string"},
+        {name:"chainId",type:"uint256"},
+        {name:"verifyingContract",type:"address"}
       ],
-      TransferWithAuthorization: [
-        { name:"from", type:"address" },
-        { name:"to", type:"address" },
-        { name:"value", type:"uint256" },
-        { name:"validAfter", type:"uint256" },
-        { name:"validBefore", type:"uint256" },
-        { name:"nonce", type:"bytes32" }
+      TransferWithAuthorization:[
+        {name:"from",type:"address"},
+        {name:"to",type:"address"},
+        {name:"value",type:"uint256"},
+        {name:"validAfter",type:"uint256"},
+        {name:"validBefore",type:"uint256"},
+        {name:"nonce",type:"bytes32"}
       ]
     };
 
     const message = {
       from: payer,
       to: payTo,
-      value: amount,
+      value: maxAmount,
       validAfter: 0,
       validBefore: deadline,
       nonce
     };
 
-    const typedData = { types, domain, primaryType:"TransferWithAuthorization", message };
+    const data = {
+      types,
+      domain,
+      primaryType:"TransferWithAuthorization",
+      message
+    };
 
-    const signature = await ethereum.request({
+    const signature = await window.ethereum.request({
       method:"eth_signTypedData_v4",
-      params:[payer, JSON.stringify(typedData)]
+      params:[payer, JSON.stringify(data)]
     });
 
-    payLabel.textContent = "Verifying…";
-
-    const resp = await fetch("/submit-proof", {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body:JSON.stringify({
-        signedXPayment: JSON.stringify({
-          x402Version:1,
-          scheme:"exact",
-          network:"base",
-          payload:{
-            signature,
-            authorization:{
-              from: payer,
-              to: payTo,  // ✅ MetaMask now sees a verified contract
-              value: String(amount),
-              validAfter:"0",
-              validBefore:String(deadline),
-              nonce
-            }
-          }
-        }),
-        symbol: selected,
-	service
-      })
-    });
-
-    const txt = await resp.text();
-    let data;
-    try{ data = JSON.parse(txt); }
-    catch { const m = txt.match(/\{[\s\S]*\}/); if(m) data = JSON.parse(m[0]); }
-
-    renderResult(data);
-
-
-  } catch(err){
-    alert(err.message || err);
+    return {
+      x402Version:1,
+      scheme:"exact",
+      network:"base",
+      payload:{
+        signature,
+        authorization:{
+          from:payer,
+          to:asset,      // USDC contract as authorizer to minimize risk warnings
+          value:String(maxAmount),
+          validAfter:"0",
+          validBefore:String(deadline),
+          nonce
+        }
+      }
+    };
   }
 
-  paySpinner.classList.add("hidden");
-  payLabel.textContent = "Pay with MetaMask";
-  payBtn.disabled = false;
-};
+  //////////////////////////////////////
+  // PAY BUTTON HANDLER
+  //////////////////////////////////////
+  payBtn.addEventListener("click", async ()=>{
+    if (!selected) return alert("Select a symbol first");
 
-function showResult(obj){
-  document.getElementById("noResult").classList.add("hidden");
-  document.getElementById("resultTop").classList.remove("hidden");
+    try {
+      payBtn.disabled = true;
+      payLabel.textContent = "Preparing payment…";
 
-  document.getElementById("resultSignal").textContent = obj.signal.toUpperCase();
-  document.getElementById("resultSymbol").textContent =
-    `${obj.symbol} · ${new Date(obj.timestamp).toLocaleString()}`;
-  document.getElementById("convictionLabel").textContent =
-    obj.conviction >=80 ? "Strong" : obj.conviction>=50 ? "Medium" : "Low";
-  document.getElementById("convictionNum").textContent = obj.conviction;
+      const svc = serviceSelect.value;
+      const prep = await preparePayment(selected, svc);
+      const accept = prep.accept;
 
-  updateDonut(obj.conviction);
-}
+      payLabel.textContent = "Waiting for signature…";
 
-updateDonut(0);
+      const signed = await signWithMetaMask(
+        accept,
+        accept.payTo,
+        accept.maxAmountRequired
+      );
 
-function renderResult(data){
-    const out = document.getElementById("output");
-    out.innerHTML = ""; // clear
+      payLabel.textContent = "Submitting proof…";
 
-    // === CASE 1: Simple or Detailed Signal ===
-    if (data?.signal) {
-        out.innerHTML = `
-            <div class="p-4 bg-[#081222] border border-slate-800 rounded-xl">
-                <div class="text-xl font-bold text-slate-200">${data.signal}</div>
-                <div class="text-slate-400 mt-1">Conviction: ${(data.conviction * 100).toFixed(1)}%</div>
-            </div>
-        `;
-        return;
+      const result = await submitProof(signed, selected, svc);
+
+      payLabel.textContent = "Done";
+      showUnifiedResult(svc, result);
+
+    } catch (err){
+      console.error(err);
+      alert("Payment failed: "+err.message);
+      payLabel.textContent = "Error";
     }
 
-    // === CASE 2: analysis-simple ===
-    if (data?.market) {
-        out.innerHTML = `
-            <div class="p-4 bg-[#081222] border border-slate-800 rounded-xl">
-                <div class="text-lg font-bold text-slate-200 mb-2">Market Summary</div>
-                <div class="text-slate-300 whitespace-pre-line">${data.market}</div>
-            </div>
-        `;
-        return;
-    }
+    payBtn.disabled = false;
+  });
 
-    // === CASE 3: analysis ===
-    if (data?.toon || data?.report) {
-        let toonHTML = "";
-        if (data.toon) {
-            toonHTML = `
-                <div class="mb-4 p-4 bg-[#091125] border border-slate-800 rounded-xl">
-                    <div class="text-lg font-bold text-slate-200">TOON Signal</div>
-                    <div class="text-slate-300 mt-2">Symbol: ${data.toon.symbol}</div>
-                    <div class="text-slate-300">Signal: ${data.toon.signal}</div>
-                    <div class="text-slate-300">Conviction: ${(data.toon.conviction * 100).toFixed(1)}%</div>
-                </div>
-            `;
-        }
-
-        let reportHTML = "";
-        if (data.report) {
-            reportHTML = `
-                <div class="p-4 bg-[#081222] border border-slate-800 rounded-xl">
-                    <div class="text-lg font-bold text-slate-200 mb-2">Market Analysis</div>
-                    <div class="text-slate-300 whitespace-pre-line">${data.report}</div>
-                </div>
-            `;
-        }
-
-        out.innerHTML = toonHTML + reportHTML;
-        return;
-    }
-
-    // === FALLBACK ===
-    out.innerHTML = `
-        <div class="p-4 bg-[#081222] border border-red-800 text-red-300 rounded-xl">
-            Unknown response:<br><pre>${JSON.stringify(data,null,2)}</pre>
-        </div>
-    `;
-}
-
-</script>
-
+  //////////////////////////////////////
+  // INIT
+  //////////////////////////////////////
+  (function init(){
+    const svc = serviceSelect.value;
+    priceBadge.innerText = `${SERVICE_PRICES[svc].toFixed(2)} USDC`;
+    const d = SERVICE_DESCRIPTIONS[svc];
+    descTitle.textContent = d.title;
+    descSub.textContent = d.subtitle;
+  })();
+  </script>
 </body>
 </html>
