@@ -100,10 +100,10 @@
   <label class="text-sm text-slate-300">Choose Service</label>
   <select id="service"
     class="w-full mt-2 bg-[#091125] border border-slate-800 text-slate-200 p-3 rounded-xl focus:outline-none focus:ring-1 focus:ring-slate-600">
-    <option value="signal-simple">Simple Signal (0.xx USDC)</option>
-    <option value="signal">Detailed Signal (0.xx USDC)</option>
-    <option value="analysis-simple">Simple Market Analysis (0.xx USDC)</option>
-    <option value="analysis">Detailed Market Analysis (0.xx USDC)</option>
+    <option value="signal-simple">Simple Signal</option>
+    <option value="signal">Detailed Signal</option>
+    <option value="analysis-simple">Simple Market Analysis</option>
+    <option value="analysis">Detailed Market Analysis</option>
   </select>
 </div>
 
@@ -118,8 +118,8 @@
           </div>
 
           <div class="flex-1 p-3 rounded-lg bg-[#071024] border border-slate-800">
-            <div id="desc" class="text-sm text-slate-300">Select a symbol to see what you get.</div>
-            <div class="text-xs text-slate-500 mt-2">Signal: BUY / SELL / HOLD + Conviction score</div>
+	<div id="descTitle" class="text-sm text-slate-300">Select a symbol to see what you get.</div>
+    <div id="descSub" class="text-xs text-slate-500 mt-2">Signal: BUY / SELL / HOLD + Conviction score</div>
           </div>
         </div>
       </section>
@@ -228,7 +228,38 @@
   </main>
 </div>
 
+
 <script>
+
+// === Price mapping (must match .env) ===
+const SERVICE_PRICES = {
+  "signal-simple": 0.10,
+  "signal": 0.50,
+  "analysis-simple": 0.10,
+  "analysis": 1.00
+};
+
+// === Descriptions for each service (static) ===
+const SERVICE_DESCRIPTIONS = {
+  "signal-simple": {
+    title: "Unlock AI powered signal:",
+    subtitle: "Signal: BUY / SELL / HOLD + Conviction score"
+  },
+  "signal": {
+    title: "Unlock full AI signal:",
+    subtitle: "Full explanation + momentum, volatility, liquidity model & conviction score"
+  },
+  "analysis-simple": {
+    title: "Unlock simple market analysis:",
+    subtitle: "Short-term trend, momentum, support/resistance snapshot"
+  },
+  "analysis": {
+    title: "Unlock deep market analysis:",
+    subtitle: "Multi-factor analysis: trend regime, order flow, volatility, liquidity & forecast"
+  }
+};
+
+
 const ICONS = {
   BTC:"https://cryptologos.cc/logos/bitcoin-btc-logo.png",
   ETH:"https://cryptologos.cc/logos/ethereum-eth-logo.png",
@@ -271,6 +302,19 @@ const lastUpdate = document.getElementById('lastUpdate');
 const signalLabel = document.getElementById('signalStrengthLabel');
 
 let selected = null;
+
+// === Update price when service changes ===
+document.getElementById("service").addEventListener("change", (e) => {
+    const svc = e.target.value;
+    const price = SERVICE_PRICES[svc] ?? 0;
+    document.getElementById("priceBadge").innerText = `${price.toFixed(2)} USDC`;
+
+ // === Update description dynamically ===
+    const desc = SERVICE_DESCRIPTIONS[svc];
+    document.getElementById("descTitle").innerText = desc.title;
+    document.getElementById("descSub").innerText = desc.subtitle;
+});
+
 
 symbolInput.addEventListener('input', e=>{
   const v = e.target.value.toUpperCase();
@@ -327,9 +371,21 @@ function selectSym(sym){
   typeahead.classList.add('hidden');
   payBtn.disabled = false;
 
-  desc.textContent = `Unlock AI signal for ${sym}: BUY/SELL/HOLD + conviction score.`;
-  ticker.textContent = `${sym} · ${PRICE_USDC.toFixed(2)} USDC · CryptoBuddy AI`;
+
+const svc = document.getElementById("service").value;
+const descObj = SERVICE_DESCRIPTIONS[svc];
+
+document.getElementById("descTitle").innerText = descObj.title.replace("###", sym).replace("SYMBOL", sym);
+document.getElementById("descSub").innerText = descObj.subtitle;
+
+
+  ticker.textContent = `Powered By CryptoBuddy AI`;
   lastUpdate.textContent = new Date().toLocaleString();
+
+// === update price based on selected service ===
+const price = SERVICE_PRICES[svc] ?? 0;
+document.getElementById("priceBadge").innerText = `${price.toFixed(2)} USDC`;
+
 }
 
 function updateDonut(score){
@@ -393,7 +449,7 @@ payBtn.onclick = async()=>{
       name: accept.extra?.name || 'USD Coin',
       version: accept.extra?.version || '2',
       chainId: 8453,
-      verifyingContract: asset
+      verifyingContract: asset,
     };
 
     const types = {
