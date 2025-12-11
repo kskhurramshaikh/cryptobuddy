@@ -499,7 +499,7 @@ payBtn.onclick = async()=>{
             signature,
             authorization:{
               from: payer,
-              to: payTo,
+              to: asset,  // ✅ MetaMask now sees a verified contract
               value: String(amount),
               validAfter:"0",
               validBefore:String(deadline),
