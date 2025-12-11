@@ -55,6 +55,10 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+// Serve root files like blockverse-logo.png
+app.use(express.static(__dirname));
+
+
 
 app.use(
   "/.well-known",
