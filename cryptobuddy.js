@@ -214,7 +214,7 @@ app.get("/prepare-payment", (req, res) => {
       payTo: process.env.AGENT_WALLET,
       asset: process.env.USDC_CONTRACT || "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
       maxAmountRequired: amount6,
-      maxTimeoutSeconds: Number(process.env.PAYMENT_TIMEOUT || 60),
+      maxTimeoutSeconds: Number(process.env.PAYMENT_TIMEOUT || 300),
       resource: `https://${req.get("host")}/signal-simple`,
       extra: { name: "USD Coin", version: "2" }
     };
